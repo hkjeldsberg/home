@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef, useState, useMemo } from 'react';
+import { useRef, useState, useMemo, useEffect } from 'react';
 import { useFrame } from '@react-three/fiber';
 import type { ThreeEvent } from '@react-three/fiber';
 import { useGLTF, Html } from '@react-three/drei';
@@ -25,6 +25,10 @@ export function FloatingObject({
   const groupRef = useRef<THREE.Group>(null!);
   const [hovered, setHovered] = useState(false);
   const currentScale = useRef(scale);
+
+  useEffect(() => {
+    return () => { document.body.style.cursor = 'auto'; };
+  }, []);
 
   const { scene } = useGLTF(url);
   const clonedScene = useMemo(() => scene.clone(true), [scene]);
