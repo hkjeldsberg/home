@@ -7,7 +7,6 @@ import { WAVE_FREQ, WAVE_AMP } from '@/lib/waveUtils';
 
 const vertexShader = `
   uniform float uTime;
-  varying float vElevation;
 
   void main() {
     vec4 modelPosition = modelMatrix * vec4(position, 1.0);
@@ -18,18 +17,14 @@ const vertexShader = `
       ${WAVE_AMP.toFixed(1)};
 
     modelPosition.y += elevation;
-    vElevation = elevation;
 
     gl_Position = projectionMatrix * viewMatrix * modelPosition;
   }
 `;
 
 const fragmentShader = `
-  varying float vElevation;
-
   void main() {
-    float alpha = 0.5;
-    gl_FragColor = vec4(0.231, 0.510, 0.965, alpha); // #3b82f6
+    gl_FragColor = vec4(0.231, 0.510, 0.965, 0.5); // #3b82f6
   }
 `;
 
@@ -37,6 +32,7 @@ export function Ocean() {
   const materialRef = useRef<THREE.ShaderMaterial>(null!);
 
   useFrame((state) => {
+    if (!materialRef.current) return;
     materialRef.current.uniforms.uTime.value = state.clock.elapsedTime;
   });
 
