@@ -64,5 +64,6 @@ export function SceneObjects({ onDive }: SceneObjectsProps) {
   );
 }
 
-// Preload models at module load time
+// useGLTF.preload is a static method, not a hook call — safe at module scope.
+// Starts fetching all models before the Canvas mounts to reduce Suspense pop-in.
 OBJECTS.forEach((obj) => useGLTF.preload(obj.url));
