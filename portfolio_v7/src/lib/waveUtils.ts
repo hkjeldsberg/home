@@ -10,8 +10,8 @@ export const WAVE_AMP = 15.0;
  * Returns the Y elevation of the wave surface at world position (x, z)
  * at a given time. Must match the vertex shader formula exactly.
  *
- * GLSL equivalent:
- *   elevation = sin(position.x * 0.02 + uTime) * cos(position.z * 0.02 + uTime) * 15.0;
+ * GLSL equivalent (must use the same WAVE_FREQ / WAVE_AMP values as above):
+ *   elevation = sin(position.x * WAVE_FREQ + uTime) * cos(position.z * WAVE_FREQ + uTime) * WAVE_AMP;
  */
 export function getWaveHeight(x: number, z: number, time: number): number {
   return (
