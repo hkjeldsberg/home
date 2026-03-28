@@ -23,6 +23,7 @@ function DiveScene({ overlayRef }: DiveSceneProps) {
 
     const tl = gsap.timeline({
       onComplete: () => router.push(route),
+      onInterrupt: () => { isDiving.current = false; },
     });
 
     // 1. Pan camera toward the clicked object
@@ -40,6 +41,7 @@ function DiveScene({ overlayRef }: DiveSceneProps) {
       y: -100,
       duration: 0.9,
       ease: 'expo.in',
+      onUpdate: () => camera.lookAt(worldPosition),
     });
 
     // 3. Simultaneously fade the black overlay
@@ -49,6 +51,8 @@ function DiveScene({ overlayRef }: DiveSceneProps) {
         { opacity: 1, duration: 0.45, ease: 'power1.in' },
         '-=0.45'
       );
+    } else if (process.env.NODE_ENV === 'development') {
+      console.warn('[OceanCanvas] overlayRef is null — fade will be skipped');
     }
   };
 
