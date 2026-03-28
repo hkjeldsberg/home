@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import { Anchor } from 'lucide-react';
 
 export function Nav() {
@@ -9,16 +10,16 @@ export function Nav() {
       </div>
       <ul className="flex gap-6 text-sm text-white/60 pointer-events-auto">
         <li>
-          <a href="/cv" className="hover:text-white transition-colors">CV</a>
+          <Link href="/cv" className="hover:text-white transition-colors">CV</Link>
         </li>
         <li>
-          <a href="/research" className="hover:text-white transition-colors">Research</a>
+          <Link href="/research" className="hover:text-white transition-colors">Research</Link>
         </li>
         <li>
-          <a href="/projects" className="hover:text-white transition-colors">Projects</a>
+          <Link href="/projects" className="hover:text-white transition-colors">Projects</Link>
         </li>
         <li>
-          <a href="/mobile" className="hover:text-white transition-colors">Mobile</a>
+          <Link href="/mobile" className="hover:text-white transition-colors">Mobile</Link>
         </li>
       </ul>
     </nav>
