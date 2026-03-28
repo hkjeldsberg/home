@@ -1,1 +1,9 @@
 /// <reference types="@react-three/fiber" />
+
+import type { ThreeElements } from "@react-three/fiber";
+
+declare module "react/jsx-runtime" {
+  namespace JSX {
+    interface IntrinsicElements extends ThreeElements {}
+  }
+}
