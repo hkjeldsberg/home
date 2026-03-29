@@ -23,10 +23,10 @@ export default function TextOverlay() {
       <animated.div style={{ ...fadeIn, width: "100%", height: "100%" }}>
         {/* Name + role — top left */}
         <div style={{ position: "absolute", top: "2rem", left: "2rem" }}>
-          <h1 style={{ fontSize: "7rem", fontWeight: 700, color: textColor, letterSpacing: "0.08em", lineHeight: 1 }}>
+          <h1 style={{ fontSize: "clamp(2.2rem, 9vw, 7rem)", fontWeight: 700, color: textColor, letterSpacing: "0.08em", lineHeight: 1 }}>
             HKJELDSBERG
           </h1>
-          <p style={{ marginTop: "0.75rem", marginLeft: ".5rem", fontSize: "1rem", color: textColor, letterSpacing: "0.15em", textTransform: "uppercase" }}>
+          <p style={{ marginTop: "0.75rem", marginLeft: ".5rem", fontSize: "clamp(0.55rem, 1.8vw, 1rem)", color: textColor, letterSpacing: "0.15em", textTransform: "uppercase" }}>
             Data Engineer · Researcher · Software Developer
           </p>
         </div>

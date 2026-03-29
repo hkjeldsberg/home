@@ -66,14 +66,17 @@ export default function ContactOverlay() {
       padding: "16px",
       fontFamily: SYS,
     }}>
-      {/* Back to scene */}
+      {/* Close button — fixed top-right, always reachable on mobile */}
       <button onClick={() => setIphoneFocused(false)} style={{
-        background: "none", border: "none",
-        color: "rgba(255,255,255,0.4)", fontSize: "12px",
-        letterSpacing: "0.08em", textTransform: "uppercase",
-        cursor: "pointer", marginBottom: "16px",
+        position: "fixed", top: "20px", right: "20px",
+        background: "rgba(255,255,255,0.08)", border: "none",
+        color: "rgba(255,255,255,0.5)", fontSize: "20px",
+        width: "36px", height: "36px", borderRadius: "50%",
+        cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
+        backdropFilter: "blur(8px)",
+        zIndex: 200,
       }}>
-        ← Back
+        ×
       </button>
 
       {/* iPhone frame */}
