@@ -9,7 +9,7 @@ const spaceGrotesk = Space_Grotesk({
 });
 
 export const metadata: Metadata = {
-  title: "HKJELDSBERG — Software Engineer & Researcher",
+  title: "hkjeldsberg – PhD, Data Engineer/Scientist, Lead Consultant",
 };
 
 export default function RootLayout({
