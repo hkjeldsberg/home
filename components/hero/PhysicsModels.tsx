@@ -86,7 +86,7 @@ function HeartV2Model() {
         camOff={[0, 0.5, 0.7]}
         lookOff={[0, 0.2, 0]}
       />
-      <RigidBody ref={rigidBodyRef} position={[-2.3, 9, 0]} rotation={[0, Math.PI / 12, 0]} restitution={0.2} friction={1.0} linearDamping={0.5} angularDamping={0.5} colliders="cuboid">
+      <RigidBody ref={rigidBodyRef} position={[-2.3, 7, 0]} rotation={[0, Math.PI / 12, 0]} restitution={0.2} friction={1.0} linearDamping={0.5} angularDamping={0.5} colliders="cuboid">
         <group ref={groupRef}>
           <primitive
             object={cloned}
