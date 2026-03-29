@@ -1,13 +1,19 @@
 "use client";
 
 import { useSpring, animated } from "@react-spring/web";
+import { useNavigation } from "@/context/NavigationContext";
 
 export default function TextOverlay() {
+  const { macbookFocused, heartFocused, iphoneFocused, mugFocused } = useNavigation();
+  const anyFocused = macbookFocused || heartFocused || iphoneFocused || mugFocused;
+
   const fadeIn = useSpring({
     from: { opacity: 0, transform: "translateY(12px)" },
-    to: { opacity: 1, transform: "translateY(0px)" },
-    delay: 1200,
-    config: { tension: 60, friction: 20 },
+    to: { opacity: anyFocused ? 0 : 1, transform: "translateY(0px)" },
+    delay: anyFocused ? 0 : 1200,
+    config: anyFocused
+      ? { tension: 60, friction: 20 }
+      : { tension: 30, friction: 22 },
   });
 
   const textColor = "rgba(177, 177, 177, 0.55)";

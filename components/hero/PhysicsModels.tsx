@@ -471,7 +471,7 @@ function IPhoneModel() {
     // Role tag
     ctx.font = "14px monospace";
     ctx.fillStyle = "#c8aaff";
-    ctx.fillText("<NotAndroid/>", 65, 152);
+    ctx.fillText("<ContactMe/>", 65, 152);
 
     const texture = new THREE.CanvasTexture(canvas);
     texture.flipY = false;

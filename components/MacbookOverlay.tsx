@@ -12,68 +12,82 @@ const MUTED  = "#8b949e";
 
 const WEB_PROJECTS = [
   {
-    name: "hkjeldsberg.dev",
+    name: "hkjeldsberg.no",
     desc: "Interactive 3D portfolio with physics-driven objects and GLSL shaders.",
     stack: ["Next.js", "R3F", "Rapier", "TypeScript"],
     status: "live",
-    href: "/",
+    href: "https://www.hkjeldsberg.no",
   },
   {
-    name: "Middah.no",
-    desc: "Norwegian meal planning platform with recipe scheduling and shopping lists.",
-    stack: ["React", "Node.js", "PostgreSQL"],
+    name: "Middah",
+    desc: "Minimalist Norwegian recipe list platform with dynamic recipe scaling.",
+    stack: ["Next.js", "TypeScript", "PostgreSQL"],
     status: "live",
-    href: "https://middah.no",
+    href: "https://www.middah.no",
   },
   {
     name: "PompWeb",
-    desc: "Live fuel price map aggregating real-time prices across Norway.",
-    stack: ["Next.js", "TypeScript", "Mapbox"],
+    desc: "Workout tracker with personalized exercises and routines.",
+    stack: ["Next.js", "TypeScript", "SupaBase"],
     status: "live",
-    href: "#",
+    href: "https://pomp-web.vercel.app",
+  },
+  {
+    name: "Barnshli",
+    desc: "Child development platform for development (cognitive, social, physical) with milestone tracker and temporal word/sentence dictionary.",
+    stack: ["Next.js", "TypeScript", "SupaBase", "Claude AI"],
+    status: "live",
+    href: "https://barnshli.vercel.app",
+  },
+  {
+    name: "Apache Tear",
+    desc: "A liteweight Markdown editor that eliminates sidebars and plugins to focus entirely on instantaneous text entry and structure though a flat directory of local files.",
+    stack: ["Next.js", "TypeScript", "SupaBase", "Claude AI"],
+    status: "live",
+    href: "https://apache-tear.vercel.app",
   },
   {
     name: "Hablar",
-    desc: "Language learning via live peer-to-peer text exchange sessions.",
-    stack: ["React", "Firebase"],
+    desc: "Spanish language learning application via live AI-powered tutor for peer-to-peer text and speach exchange sessions.",
+    stack: ["Next.js", "TypeScript", "SupaBase", "DeepGram API", "Claude AI"],
     status: "archived",
     href: "#",
   },
   {
     name: "Vinylify",
-    desc: "Generates personalised vinyl artwork from Spotify listening data.",
-    stack: ["React", "Spotify API", "Canvas"],
+    desc: "Vinyl collection website with personalized recommendations feature from Discogs data.",
+    stack: ["Next.js", "TypeScript", "SupaBase", "Discogs API"],
     status: "archived",
     href: "#",
   },
   {
-    name: "Barnshli",
-    desc: "Creative content platform for children: stories, tasks, learning.",
-    stack: ["React", "Node.js", "MongoDB"],
+    name: "Fremtur",
+    desc: "A Norwegian-based solution designed to streamline and facilitate carpooling.",
+    stack: ["React", "Kotlin", "PostgreSQL", "Kubernetes", "Entur API", "Vipps API"],
     status: "archived",
-    href: "#",
+    href: "https://www.fremtur.no",
   },
 ];
 
 const MOB_PROJECTS = [
   {
-    name: "Pomp",
-    desc: "Fuel price comparison app for Norwegian drivers. Location-aware with live data.",
+    name: "Zleep",
+    desc: "Sleep tracking and analysis via motion/audio sensors with personalised recommendations.",
     stack: ["React Native", "Expo"],
-    status: "live",
+    status: "archived",
+    href: "#",
+  },
+  {
+    name: "Pomp",
+    desc: "Workout tracker with personalized exercises and routines; mobile phone version.",
+    stack: ["React Native", "Expo"],
+    status: "archived",
     href: "#",
   },
   {
     name: "Smittestopp",
     desc: "Official Norwegian COVID-19 contact tracing app (FHI). Privacy-preserving BLE proximity.",
-    stack: ["React Native", "Bluetooth LE"],
-    status: "archived",
-    href: "#",
-  },
-  {
-    name: "Zleep",
-    desc: "Sleep tracking and analysis via motion/audio sensors with personalised recommendations.",
-    stack: ["React Native", "TypeScript"],
+    stack: ["Swift", "Android", "Tornado", "Bluetooth LE"],
     status: "archived",
     href: "#",
   },
@@ -83,6 +97,18 @@ export default function MacbookOverlay() {
   const { macbookFocused, setMacbookFocused } = useNavigation();
   const [visible, setVisible] = useState(false);
   const [tab, setTab] = useState<"web" | "mobile">("web");
+
+  const link = (title:string,href:string) => (
+    <a
+    href={href}
+    target="_blank"
+    rel="noopener noreferrer"
+    style={{ fontSize: ".8rem",  textDecoration: "none"}}
+ >
+  {title}
+  </a>
+  )
+
 
   // Delayed reveal — let camera pan in first
   useEffect(() => {
@@ -164,7 +190,7 @@ export default function MacbookOverlay() {
               letterSpacing: "0.01em",
             }}
           >
-            🔒 hkjeldsberg.dev/develop
+            🔒 hkjeldsberg.no/developer-portfolio
           </div>
           <span
             style={{ fontSize: "11px", color: "#3a3a3a", cursor: "pointer", flexShrink: 0 }}
@@ -189,18 +215,8 @@ export default function MacbookOverlay() {
             }}
           >
             <span style={{ fontSize: "14px", fontWeight: 700, color: TEXT, letterSpacing: "-0.01em" }}>
-              hkjeldsberg
+            {link("github/hkjeldsberg", "https://github.com/hkjeldsberg/")}
             </span>
-            <div style={{ display: "flex", gap: "24px" }}>
-              {["research", "develop", "cv", "contact"].map(l => (
-                <a key={l} href={`/${l}`} style={{
-                  fontSize: "13px", color: MUTED, textDecoration: "none",
-                  textTransform: "capitalize",
-                }}>
-                  {l}
-                </a>
-              ))}
-            </div>
           </div>
 
           {/* Section heading */}
