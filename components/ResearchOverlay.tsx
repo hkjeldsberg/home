@@ -202,45 +202,6 @@ export default function ResearchOverlay() {
     );
   };
 
-  const ManuscriptFigure = () => {
-  return (
-    <div className="py-8">
-      <figure 
-        style={{ 
-          marginTop: '2rem', 
-          borderTop: '1px solid #eee', 
-          paddingTop: '1rem' 
-        }}
-      >
-        <img 
-          src="/gifs/your-file-name.gif" 
-          alt="LA Simulation" 
-          style={{ width: '100%', borderRadius: '4px' }} 
-        />
-        <figcaption 
-          style={{ 
-            fontFamily: '"Times New Roman", serif', 
-            fontSize: '0.9rem', 
-            textAlign: 'justify', 
-            marginTop: '0.8rem' 
-          }}
-        >
-          <strong>Figure 1:</strong> Dynamic 4D Hemodynamics. Spatiotemporal fluid 
-          velocity (left) and patient-specific mesh deformation (right) simulated 
-          over two cardiac cycles ($T=2$ s). Data available via{" "}
-          <a 
-            href="INSERT_LINK_HERE" 
-            target="_blank" 
-            rel="noopener noreferrer"
-            className="text-blue-600 hover:underline"
-          >
-            this open dataset
-          </a>.
-        </figcaption>
-      </figure>
-    </div>
-  );
-};
 
 
   const link = (title:string,href:string) => (

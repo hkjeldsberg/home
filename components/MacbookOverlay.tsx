@@ -33,6 +33,27 @@ const WEB_PROJECTS = [
     href: "https://pomp-web.vercel.app",
   },
   {
+    name: "Diariå",
+    desc: "Personal journaling platform.",
+    stack: ["Vite", "TypeScript", "Tailwind CSS", "Supabase", "Gmail API", "Google Photo Picker API"],
+    status: "live",
+    href: "https://www.diariå.no",
+  },
+  {
+    name: "FontLine",
+    desc: "A personal typography app that uses OCR and vector synthesis to transform your physical handwriting into a custom digital font for instant transcription.",
+    stack: ["Vite", "TypeScript", "Tailwind CSS", "Supabase"],
+    status: "live",
+    href: "https://fontline.vercel.app",
+  },
+  {
+    name: "Kjeldsberg FamilieDashboard",
+    desc: "Management and overview dashboard for family business.",
+    stack: ["Next.js", "React", "TypeScript", "Vercel"],
+    status: "live",
+    href: "https://kjeldsberg-db.vercel.app",
+  },
+  {
     name: "Barnshli",
     desc: "Child development platform for development (cognitive, social, physical) with milestone tracker and temporal word/sentence dictionary.",
     stack: ["Next.js", "TypeScript", "SupaBase", "Claude AI"],
