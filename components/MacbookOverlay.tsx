@@ -3,140 +3,265 @@
 import { useState, useEffect } from "react";
 import { useNavigation } from "@/context/NavigationContext";
 
-const ACCENT = "#58a6ff";
-const BG     = "#0d1117";
-const SURF   = "#161b22";
-const BORDER = "#30363d";
-const TEXT   = "#e6edf3";
-const MUTED  = "#8b949e";
+const BG     = "#0b0d10";
+const SURF   = "#13171c";
+const BORDER = "#1a1f24";
+const TEXT   = "#e7ecef";
+const MUTED  = "#9aa3ab";
+const ACCENT = "#4b8bf4";
 
-const WEB_PROJECTS = [
+type Project = {
+  id: string;
+  name: string;
+  url: string;
+  desc: string;
+  stack: string[];
+  status: "live" | "archived";
+  href: string;
+  bg: string;
+};
+
+const WEB_PROJECTS: Project[] = [
   {
+    id: "hkjeldsberg",
     name: "hkjeldsberg.no",
+    url: "hkjeldsberg.no",
     desc: "Interactive 3D portfolio with physics-driven objects and GLSL shaders.",
-    stack: ["Next.js", "R3F", "Rapier", "TypeScript"],
+    stack: ["Next.js", "R3F", "Rapier"],
     status: "live",
     href: "https://www.hkjeldsberg.no",
+    bg: "radial-gradient(circle at 70% 30%, #1a3a6e 0%, transparent 55%), radial-gradient(circle at 72% 45%, #6aa6ff 0 9%, transparent 9.5%), linear-gradient(135deg, #0a0e1a, #06080c)",
   },
   {
+    id: "middah",
     name: "Middah",
-    desc: "Minimalist Norwegian recipe list platform with dynamic recipe scaling.",
+    url: "middah.no",
+    desc: "Minimalist Norwegian recipe list with dynamic scaling.",
     stack: ["Next.js", "TypeScript", "PostgreSQL"],
     status: "live",
     href: "https://www.middah.no",
+    bg: "repeating-linear-gradient(0deg, #f5f1e8 0 22px, #d8d1c0 22px 22.5px), #f5f1e8",
   },
   {
+    id: "pompweb",
     name: "PompWeb",
+    url: "pompweb.app",
     desc: "Workout tracker with personalized exercises and routines.",
-    stack: ["Next.js", "TypeScript", "SupaBase"],
+    stack: ["Next.js", "TypeScript", "Supabase"],
     status: "live",
     href: "https://pomp-web.vercel.app",
+    bg: "repeating-linear-gradient(90deg, #1a1c22 0 36px, transparent 36px 78px) center/100% 36px no-repeat, linear-gradient(180deg, #e36588 60%, #0e0f12 60%)",
   },
   {
+    id: "diaria",
     name: "Diariå",
-    desc: "Personal journaling platform.",
-    stack: ["Vite", "TypeScript", "Tailwind CSS", "Supabase", "Gmail API", "Google Photo Picker API"],
+    url: "diaria.app",
+    desc: "Personal journaling platform with photo and email ingest.",
+    stack: ["Vite", "Supabase", "Gmail API"],
     status: "live",
     href: "https://www.diariå.no",
+    bg: "linear-gradient(135deg, #b48cff 0 36%, #f7f3ec 36%)",
   },
   {
+    id: "fontline",
     name: "FontLine",
-    desc: "A personal typography app that uses OCR and vector synthesis to transform your physical handwriting into a custom digital font for instant transcription.",
-    stack: ["Vite", "TypeScript", "Tailwind CSS", "Supabase"],
+    url: "fontline.app",
+    desc: "Handwriting → custom font via OCR and vector synthesis.",
+    stack: ["Next.js", "Canvas", "OCR"],
     status: "live",
     href: "https://fontline.vercel.app",
+    bg: "radial-gradient(ellipse at center, rgba(231,199,90,0.18), transparent 60%), #faf6eb",
   },
   {
-    name: "Kjeldsberg FamilieDashboard",
+    id: "kjeldsberg-db",
+    name: "FamilieDashboard",
+    url: "kjeldsberg-db.vercel.app",
     desc: "Management and overview dashboard for family business.",
     stack: ["Next.js", "React", "TypeScript", "Vercel"],
     status: "live",
     href: "https://kjeldsberg-db.vercel.app",
+    bg: "linear-gradient(180deg, #0d1b2a 0 28%, #1e3a5f 28% 30%, #0d1b2a 30%), linear-gradient(#0d1b2a, #0d1b2a)",
   },
   {
+    id: "barnshli",
     name: "Barnshli",
-    desc: "Child development platform for development (cognitive, social, physical) with milestone tracker and temporal word/sentence dictionary.",
-    stack: ["Next.js", "TypeScript", "SupaBase", "Claude AI"],
+    url: "barnshli.vercel.app",
+    desc: "Child development platform with milestone tracker and dictionary.",
+    stack: ["Next.js", "TypeScript", "Claude AI"],
     status: "live",
     href: "https://barnshli.vercel.app",
+    bg: "radial-gradient(circle at 35% 40%, #ffd6e0 0%, transparent 48%), radial-gradient(circle at 70% 65%, #c8e6ff 0%, transparent 48%), #f9f0ff",
   },
   {
+    id: "apache-tear",
     name: "Apache Tear",
-    desc: "A liteweight Markdown editor that eliminates sidebars and plugins to focus entirely on instantaneous text entry and structure though a flat directory of local files.",
-    stack: ["Next.js", "TypeScript", "SupaBase", "Claude AI"],
+    url: "apache-tear.vercel.app",
+    desc: "Lightweight Markdown editor focused on instant text entry.",
+    stack: ["Next.js", "TypeScript", "Claude AI"],
     status: "live",
     href: "https://apache-tear.vercel.app",
+    bg: "linear-gradient(180deg, #111 0 8%, #0d0d0d 8%), linear-gradient(#0d0d0d, #0d0d0d)",
   },
   {
+    id: "tenerife",
+    name: "Tenerife Trip Tracker",
+    url: "tenerife-phi.vercel.app",
+    desc: "Private trip planner for a Tenerife 2026 group holiday — itinerary, budget splits, and shared notes.",
+    stack: ["Next.js", "TypeScript", "Supabase"],
+    status: "live",
+    href: "https://tenerife-phi.vercel.app/",
+    bg: "radial-gradient(circle at 60% 40%, #f59e0b 0%, transparent 50%), linear-gradient(160deg, #0ea5e9 0 35%, #0c4a6e 35%)",
+  },
+  {
+    id: "spanyard",
+    name: "Spanyard",
+    url: "spanyard.vercel.app",
+    desc: "Daily Spanish learning app with AI-powered vocabulary, sentence drills, and progress tracking.",
+    stack: ["Next.js", "TypeScript", "Claude AI"],
+    status: "live",
+    href: "https://spanyard.vercel.app/today",
+    bg: "linear-gradient(135deg, #dc2626 0 33%, #facc15 33% 66%, #dc2626 66%)",
+  },
+  {
+    id: "chartizard",
+    name: "Chartizard",
+    url: "chartizard.vercel.app",
+    desc: "Interactive catalogue of 286 chart, diagram, and plot types — filterable by purpose, data shape, and field.",
+    stack: ["Next.js", "TypeScript", "Tailwind CSS"],
+    status: "live",
+    href: "https://chartizard.vercel.app/",
+    bg: "repeating-linear-gradient(90deg, #e5e7eb 0 1px, transparent 1px 48px), repeating-linear-gradient(0deg, #e5e7eb 0 1px, transparent 1px 48px), #fff",
+  },
+  {
+    id: "rodtrad",
+    name: "Rød tråd",
+    url: "redthread-one.vercel.app",
+    desc: "Menstrual cycle tracker with symptom logging, cycle predictions, and personal health insights.",
+    stack: ["Next.js", "TypeScript", "Supabase"],
+    status: "live",
+    href: "https://redthread-one.vercel.app/",
+    bg: "radial-gradient(circle at 50% 45%, #fda4af 0%, transparent 55%), linear-gradient(160deg, #1c0a0a, #3b0d0d)",
+  },
+  {
+    id: "hablar",
     name: "Hablar",
-    desc: "Spanish language learning application via live AI-powered tutor for peer-to-peer text and speach exchange sessions.",
-    stack: ["Next.js", "TypeScript", "SupaBase", "DeepGram API", "Claude AI"],
+    url: "hablar.app",
+    desc: "Spanish learning via AI-powered live tutor sessions.",
+    stack: ["Next.js", "DeepGram API", "Claude AI"],
     status: "archived",
     href: "#",
+    bg: "linear-gradient(135deg, #d4522a 0 30%, #f7c59f 30%)",
   },
   {
+    id: "vinylify",
     name: "Vinylify",
-    desc: "Vinyl collection website with personalized recommendations feature from Discogs data.",
-    stack: ["Next.js", "TypeScript", "SupaBase", "Discogs API"],
+    url: "vinylify.app",
+    desc: "Vinyl collection with personalized Discogs recommendations.",
+    stack: ["Next.js", "Discogs API"],
     status: "archived",
     href: "#",
+    bg: "radial-gradient(circle at 50% 50%, #2a2a2a 0 28%, #111 28% 29%, #2a2a2a 29% 44%, #111 44% 45%, #1a1a1a 45%), #111",
   },
   {
+    id: "fremtur",
     name: "Fremtur",
-    desc: "A Norwegian-based solution designed to streamline and facilitate carpooling.",
-    stack: ["React", "Kotlin", "PostgreSQL", "Kubernetes", "Entur API", "Vipps API"],
+    url: "fremtur.no",
+    desc: "Norwegian carpooling platform streamlining peer rides.",
+    stack: ["React", "Kotlin", "Vipps API"],
     status: "archived",
     href: "https://www.fremtur.no",
+    bg: "linear-gradient(135deg, #1a4a2e 0 40%, #2d7a47 40%)",
   },
 ];
 
-const MOB_PROJECTS = [
+const MOB_PROJECTS: Project[] = [
   {
+    id: "zleep",
     name: "Zleep",
-    desc: "Sleep tracking and analysis via motion/audio sensors with personalised recommendations.",
+    url: "zleep.app",
+    desc: "Sleep tracking via motion/audio sensors with personalised recommendations.",
     stack: ["React Native", "Expo"],
     status: "archived",
     href: "#",
+    bg: "radial-gradient(circle at 50% 30%, #1a1a4e 0%, transparent 60%), linear-gradient(180deg, #0a0a1a, #15153a)",
   },
   {
+    id: "pomp",
     name: "Pomp",
-    desc: "Workout tracker with personalized exercises and routines; mobile phone version.",
+    url: "pomp.app",
+    desc: "Workout tracker with personalized routines; mobile version.",
     stack: ["React Native", "Expo"],
     status: "archived",
     href: "#",
+    bg: "linear-gradient(180deg, #1a0a00 0 30%, #e36527 30% 32%, #1a0a00 32%)",
   },
   {
+    id: "smittestopp",
     name: "Smittestopp",
-    desc: "Official Norwegian COVID-19 contact tracing app (FHI). Privacy-preserving BLE proximity.",
-    stack: ["Swift", "Android", "Tornado", "Bluetooth LE"],
+    url: "fhi.no/smittestopp",
+    desc: "Norwegian COVID-19 contact tracing app (FHI). Privacy-preserving BLE proximity.",
+    stack: ["Swift", "Android", "Bluetooth LE"],
     status: "archived",
     href: "#",
+    bg: "linear-gradient(135deg, #003f5c 0 40%, #2fafb1 40%)",
   },
 ];
+
+function VhsCard({ p }: { p: Project }) {
+  const isExternal = p.href.startsWith("http");
+  return (
+    <a
+      className="proj-card"
+      href={p.href}
+      target={isExternal ? "_blank" : undefined}
+      rel={isExternal ? "noopener noreferrer" : undefined}
+      onClick={!isExternal ? (e) => e.preventDefault() : undefined}
+    >
+      {/* Browser chrome bar */}
+      <div className="proj-bar">
+        <div className="proj-dots">
+          <i style={{ background: "#ff5f56" }} />
+          <i style={{ background: "#ffbd2e" }} />
+          <i style={{ background: "#27c93f" }} />
+        </div>
+        <div className="proj-url">{p.url}</div>
+        <span className={`proj-pill ${p.status}`}>
+          <span className="proj-pill-dot" />
+          {p.status}
+        </span>
+      </div>
+
+      {/* VHS screen */}
+      <div className="proj-screen">
+        <div className="vhs">
+          <div className="vhs-layer vhs-base" style={{ background: p.bg, backgroundImage: `url(/screenshots/${p.id}.png)`, backgroundSize: "cover", backgroundPosition: "center" }} />
+          <div className="vhs-layer vhs-red"  style={{ background: p.bg, backgroundImage: `url(/screenshots/${p.id}.png)`, backgroundSize: "cover", backgroundPosition: "center" }} />
+          <div className="vhs-layer vhs-cyan" style={{ background: p.bg, backgroundImage: `url(/screenshots/${p.id}.png)`, backgroundSize: "cover", backgroundPosition: "center" }} />
+          <span className="vhs-rec">● REC SP</span>
+        </div>
+      </div>
+
+      {/* Card body */}
+      <div className="proj-body">
+        <h3>{p.name}</h3>
+        <p>{p.desc}</p>
+        <div className="proj-tags">
+          {p.stack.map((s) => (
+            <span key={s} className="proj-tag">{s}</span>
+          ))}
+        </div>
+      </div>
+    </a>
+  );
+}
 
 export default function MacbookOverlay() {
   const { macbookFocused, setMacbookFocused } = useNavigation();
   const [visible, setVisible] = useState(false);
   const [tab, setTab] = useState<"web" | "mobile">("web");
 
-  const link = (title:string,href:string) => (
-    <a
-    href={href}
-    target="_blank"
-    rel="noopener noreferrer"
-    style={{ fontSize: ".8rem",  textDecoration: "none"}}
- >
-  {title}
-  </a>
-  )
-
-
-  // Delayed reveal — let camera pan in first
   useEffect(() => {
-    if (!macbookFocused) {
-      setVisible(false);
-      return;
-    }
+    if (!macbookFocused) { setVisible(false); return; }
     const t = setTimeout(() => setVisible(true), 900);
     return () => clearTimeout(t);
   }, [macbookFocused]);
@@ -162,22 +287,22 @@ export default function MacbookOverlay() {
       {/* Screen frame */}
       <div
         style={{
-          width: "min(900px, 92vw)",
-          maxHeight: "82vh",
+          width: "min(960px, 94vw)",
+          maxHeight: "88vh",
           display: "flex",
           flexDirection: "column",
           background: BG,
           border: `1px solid ${BORDER}`,
-          borderRadius: "8px",
+          borderRadius: "10px",
           overflow: "hidden",
           boxShadow: "0 0 0 1px rgba(255,255,255,0.04), 0 40px 100px rgba(0,0,0,0.95)",
-          fontFamily: "-apple-system, BlinkMacSystemFont, 'SF Mono', 'Segoe UI', sans-serif",
+          fontFamily: "var(--font-space-grotesk), ui-sans-serif, sans-serif",
         }}
       >
         {/* Browser chrome */}
         <div
           style={{
-            background: "#161b22",
+            background: SURF,
             borderBottom: `1px solid ${BORDER}`,
             padding: "8px 14px",
             display: "flex",
@@ -186,7 +311,6 @@ export default function MacbookOverlay() {
             flexShrink: 0,
           }}
         >
-          {/* Traffic lights */}
           {(["#ff5f57", "#febc2e", "#28c840"] as const).map((c, i) => (
             <div
               key={i}
@@ -198,20 +322,16 @@ export default function MacbookOverlay() {
               }}
             />
           ))}
-          {/* URL bar */}
           <div
             style={{
-              flex: 1,
-              background: "#0d1117",
+              flex: 1, background: BG,
               border: `1px solid ${BORDER}`,
-              borderRadius: "6px",
-              padding: "4px 12px",
-              fontSize: "12px",
-              color: MUTED,
-              letterSpacing: "0.01em",
+              borderRadius: "6px", padding: "4px 12px",
+              fontSize: "12px", color: MUTED, letterSpacing: "0.01em",
+              fontFamily: "var(--font-jetbrains-mono, ui-monospace)",
             }}
           >
-            🔒 hkjeldsberg.no/developer-portfolio
+            🔒 hkjeldsberg.no/projects
           </div>
           <span
             style={{ fontSize: "11px", color: "#3a3a3a", cursor: "pointer", flexShrink: 0 }}
@@ -228,20 +348,23 @@ export default function MacbookOverlay() {
           <div
             style={{
               borderBottom: `1px solid ${BORDER}`,
-              padding: "16px 28px",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "space-between",
+              padding: "14px 28px",
               background: SURF,
             }}
           >
-            <span style={{ fontSize: "14px", fontWeight: 700, color: TEXT, letterSpacing: "-0.01em" }}>
-            {link("github/hkjeldsberg", "https://github.com/hkjeldsberg/")}
+            <span
+              style={{
+                fontSize: "12px", fontWeight: 600,
+                color: MUTED, letterSpacing: "0.02em",
+                fontFamily: "var(--font-jetbrains-mono, ui-monospace)",
+              }}
+            >
+              github/hkjeldsberg
             </span>
           </div>
 
           {/* Section heading */}
-          <div style={{ padding: "28px 28px 0" }}>
+          <div style={{ padding: "24px 28px 0" }}>
             <h1 style={{ fontSize: "22px", fontWeight: 700, color: TEXT, margin: 0, letterSpacing: "-0.02em" }}>
               Projects
             </h1>
@@ -251,13 +374,21 @@ export default function MacbookOverlay() {
           </div>
 
           {/* Tabs */}
-          <div style={{ padding: "16px 28px 0", display: "flex", gap: "0", borderBottom: `1px solid ${BORDER}`, marginTop: "20px" }}>
-            {(["web", "mobile"] as const).map(t => (
+          <div
+            style={{
+              padding: "0 28px",
+              display: "flex",
+              gap: 0,
+              borderBottom: `1px solid ${BORDER}`,
+              marginTop: "18px",
+            }}
+          >
+            {(["web", "mobile"] as const).map((t) => (
               <button
                 key={t}
                 onClick={() => setTab(t)}
                 style={{
-                  padding: "8px 18px",
+                  padding: "9px 18px",
                   fontSize: "13px",
                   fontWeight: 500,
                   background: "none",
@@ -273,60 +404,10 @@ export default function MacbookOverlay() {
             ))}
           </div>
 
-          {/* Project list */}
-          <div style={{ padding: "0 28px 28px" }}>
-            {projects.map((p, i) => (
-              <a
-                key={p.name}
-                href={p.href}
-                target={p.href.startsWith("http") ? "_blank" : undefined}
-                rel="noopener noreferrer"
-                style={{
-                  display: "block",
-                  padding: "16px 0",
-                  borderBottom: i < projects.length - 1 ? `1px solid ${BORDER}` : "none",
-                  textDecoration: "none",
-                  color: "inherit",
-                }}
-              >
-                <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "5px" }}>
-                  <span style={{ fontSize: "14px", fontWeight: 600, color: ACCENT }}>
-                    {p.name}
-                  </span>
-                  <span
-                    style={{
-                      fontSize: "10px",
-                      padding: "1px 7px",
-                      borderRadius: "10px",
-                      border: `1px solid ${p.status === "live" ? "#238636" : BORDER}`,
-                      color: p.status === "live" ? "#3fb950" : MUTED,
-                      background: p.status === "live" ? "rgba(35,134,54,0.12)" : "transparent",
-                    }}
-                  >
-                    {p.status}
-                  </span>
-                </div>
-                <p style={{ fontSize: "12px", color: MUTED, margin: "0 0 8px", lineHeight: 1.6 }}>
-                  {p.desc}
-                </p>
-                <div style={{ display: "flex", gap: "6px", flexWrap: "wrap" }}>
-                  {p.stack.map(s => (
-                    <span
-                      key={s}
-                      style={{
-                        fontSize: "11px",
-                        padding: "2px 8px",
-                        background: "rgba(88,166,255,0.1)",
-                        border: `1px solid rgba(88,166,255,0.2)`,
-                        borderRadius: "4px",
-                        color: ACCENT,
-                      }}
-                    >
-                      {s}
-                    </span>
-                  ))}
-                </div>
-              </a>
+          {/* Card grid */}
+          <div className="proj-grid">
+            {projects.map((p) => (
+              <VhsCard key={p.id} p={p} />
             ))}
           </div>
         </div>

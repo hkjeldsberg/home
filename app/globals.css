@@ -2,6 +2,7 @@
 
 @theme {
   --font-family-sans: var(--font-space-grotesk), system-ui, sans-serif;
+  --font-family-mono: var(--font-jetbrains-mono), ui-monospace, monospace;
 }
 
 *,
@@ -16,4 +17,104 @@ html,
 body {
   width: 100%;
   background: #000;
+}
+
+/* ── VHS Filter ─────────────────────────────────────────────────── */
+.vhs { position: absolute; inset: 0; }
+.vhs > .vhs-layer {
+  position: absolute; inset: 0;
+  background-size: cover; background-position: center;
+}
+.vhs > .vhs-base {
+  filter: saturate(1.6) contrast(1.1) brightness(0.95) blur(0.4px);
+}
+.vhs > .vhs-red {
+  transform: translateX(2.5px);
+  filter: sepia(1) saturate(8) hue-rotate(-50deg) brightness(0.7);
+  mix-blend-mode: screen; opacity: 0.55;
+}
+.vhs > .vhs-cyan {
+  transform: translateX(-2.5px);
+  filter: sepia(1) saturate(8) hue-rotate(150deg) brightness(0.7);
+  mix-blend-mode: screen; opacity: 0.55;
+}
+.vhs::before {
+  content: ""; position: absolute; inset: 0;
+  pointer-events: none; z-index: 3;
+  background: repeating-linear-gradient(0deg, rgba(0,0,0,0) 0 3px, rgba(0,0,0,0.22) 3px 4px);
+}
+.vhs::after {
+  content: ""; position: absolute; inset: 0;
+  pointer-events: none; z-index: 4;
+  background:
+    linear-gradient(180deg, transparent 36%, rgba(255,255,255,0.18) 38%, transparent 42%),
+    url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHdpZHRoPScxNjAnIGhlaWdodD0nMTYwJz48ZmlsdGVyIGlkPSduJz48ZmVUdXJidWxlbmNlIGJhc2VGcmVxdWVuY3k9JzEuMicgbnVtT2N0YXZlcz0nMScgc2VlZD0nNCcvPjwvZmlsdGVyPjxyZWN0IHdpZHRoPScxNjAnIGhlaWdodD0nMTYwJyBmaWx0ZXI9J3VybCgjbiknIG9wYWNpdHk9JzAuNScvPjwvc3ZnPg==");
+  mix-blend-mode: overlay; opacity: 0.85;
+}
+.vhs-rec {
+  position: absolute; top: 8px; right: 10px; z-index: 5;
+  color: #ff5e5e;
+  font: 700 10px var(--font-jetbrains-mono, ui-monospace);
+  letter-spacing: 0.12em;
+  text-shadow: 0 0 4px rgba(255,0,0,0.6);
+}
+
+/* ── Project card grid ──────────────────────────────────────────── */
+.proj-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+  padding: 28px;
+}
+@media (max-width: 760px) { .proj-grid { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 500px) { .proj-grid { grid-template-columns: 1fr; } }
+
+.proj-card {
+  border-radius: 10px; overflow: hidden;
+  border: 1px solid #1a1f24; background: #0f1216;
+  display: flex; flex-direction: column;
+  text-decoration: none; color: inherit;
+  transition: transform 0.2s, border-color 0.2s;
+}
+.proj-card:hover { transform: translateY(-2px); border-color: #2a3038; }
+
+.proj-bar {
+  display: flex; align-items: center; gap: 8px;
+  padding: 8px 10px; background: #13171c;
+  border-bottom: 1px solid #1a1f24;
+}
+.proj-dots { display: flex; gap: 4px; }
+.proj-dots i { width: 9px; height: 9px; border-radius: 50%; display: block; }
+
+.proj-url {
+  flex: 1; padding: 4px 8px; border-radius: 5px;
+  background: #0a0c0f;
+  font: 11px/1 var(--font-jetbrains-mono, ui-monospace);
+  color: #c2cad1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+
+.proj-pill {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 2px 8px; border-radius: 999px;
+  font: 10px/1.8 var(--font-jetbrains-mono, ui-monospace);
+  border: 1px solid currentColor; background: transparent; white-space: nowrap;
+}
+.proj-pill.live { color: #3fb56b; }
+.proj-pill.archived { color: #7a828a; }
+.proj-pill-dot { width: 5px; height: 5px; border-radius: 50%; background: currentColor; display: inline-block; }
+
+.proj-screen {
+  position: relative; width: 100%; aspect-ratio: 16/10;
+  background: #000; overflow: hidden;
+}
+
+.proj-body { padding: 12px 14px 14px; display: flex; flex-direction: column; gap: 8px; }
+.proj-body h3 { margin: 0; font-size: 15px; font-weight: 600; color: #e7ecef; }
+.proj-body p { margin: 0; color: #9aa3ab; font-size: 12px; line-height: 1.45; }
+
+.proj-tags { display: flex; flex-wrap: wrap; gap: 5px; }
+.proj-tag {
+  padding: 3px 8px; border-radius: 6px;
+  background: #101418; border: 1px solid #1c2127;
+  color: #8eb0e6; font: 10px/1 var(--font-jetbrains-mono, ui-monospace);
 }
