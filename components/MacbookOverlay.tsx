@@ -123,6 +123,16 @@ const WEB_PROJECTS: Project[] = [
     bg: "linear-gradient(135deg, #dc2626 0 33%, #facc15 33% 66%, #dc2626 66%)",
   },
   {
+    id: "barnis",
+    name: "Barnis",
+    url: "barnis.vercel.app",
+    desc: "Barnehage finder for Oslo — shows available spots ranked by travel time from your address.",
+    stack: ["Next.js", "TypeScript", "Entur API"],
+    status: "live",
+    href: "https://barnis.vercel.app",
+    bg: "radial-gradient(circle at 40% 55%, #86efac 0%, transparent 50%), linear-gradient(160deg, #f0fdf4 0 40%, #dcfce7 40%)",
+  },
+  {
     id: "chartizard",
     name: "Chartizard",
     url: "chartizard.vercel.app",
