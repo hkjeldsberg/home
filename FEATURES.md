@@ -36,9 +36,9 @@ Backlog of ideas for the portfolio. Effort: **S** = < 1h, **M** = half day, **L*
 
 ## 3. 3D — Life and detail
 
-- [x] **S** **Mug steam.** Shader-based curling steam above the mug (scrolling noise on a billboard plane). ✅ *done 2026-11-19*
-- [x] **S** **Heart beat.** Subtle scale pulse + emissive throb on the heart model when idle. ✅ *done 2026-11-19*
-- [x] **M** **Idle screen content.** MacBook screen cycles real project screenshots (reuse `public/screenshots`) instead of only the hacker effect; iPhone shows a mini lock screen with clock. ✅ *done 2026-11-19*
+- [ ] **S** **Mug steam.** Shader-based curling steam above the mug (scrolling noise on a billboard plane). ↩︎ *tried and reverted 2026-11-19*
+- [ ] **S** **Heart beat.** Subtle scale pulse + emissive throb on the heart model when idle. ↩︎ *tried and reverted 2026-11-19*
+- [ ] **M** **Idle screen content.** MacBook screen cycles real project screenshots (reuse `public/screenshots`) instead of only the hacker effect; iPhone shows a mini lock screen with clock. ↩︎ *tried and reverted 2026-11-19*
 - [x] **S** **Dust / floating particles** in the light beam for depth. ✅ *done 2026-11-19*
 - [ ] **L** **New object per section** if sections grow, e.g. a stack of papers/book for Research, falls in with the others.
 
