@@ -1,11 +1,14 @@
 "use client";
 
 import { useMemo, useRef, useEffect } from "react";
-import { useGLTF } from "@react-three/drei";
-import { useFrame, useThree } from "@react-three/fiber";
+import { useGLTF, Billboard, Sparkles } from "@react-three/drei";
+import { useFrame, useThree, type ThreeEvent } from "@react-three/fiber";
 import { RigidBody, CuboidCollider, RapierRigidBody, useRapier } from "@react-three/rapier";
 import * as THREE from "three";
 import { useNavigation } from "@/context/NavigationContext";
+import { WEB_PROJECTS } from "@/lib/projects";
+import { setObjectPosition, type ObjectKey } from "./sceneStore";
+import { useDragThrow } from "./useDragThrow";
 
 // ── Static table on the floor ─────────────────────────────────────────────
 // Table raw bounds (after its 90° node rotation): X ±1.0, Y ±0.5, Z ±0.601
@@ -34,10 +37,37 @@ function TableModel() {
   );
 }
 
+const HEART_GLOW = new THREE.Color("#ff2a4a");
+
+/** Lub-dub envelope over one beat, phase in [0,1) → [0,1]. */
+function heartbeat(phase: number) {
+  if (phase < 0.08) return Math.sin((phase / 0.08) * Math.PI);
+  if (phase > 0.13 && phase < 0.25) return 0.6 * Math.sin(((phase - 0.13) / 0.12) * Math.PI);
+  return 0;
+}
+
+// Imperative material updates live outside components (React Compiler immutability rule).
+function setEmissiveIntensity(mats: THREE.MeshStandardMaterial[], v: number) {
+  for (const m of mats) m.emissiveIntensity = v;
+}
+
 function HeartV2Model() {
   const { scene } = useGLTF("/assets/heart.glb");
   const { heartFocused, setHeartFocused, macbookFocused, iphoneFocused, mugFocused } = useNavigation();
-  const cloned = useMemo(() => scene.clone(), [scene]);
+  const { cloned, glowMats } = useMemo(() => {
+    const c = scene.clone();
+    const mats: THREE.MeshStandardMaterial[] = [];
+    c.traverse((n) => {
+      if (n instanceof THREE.Mesh && n.material instanceof THREE.MeshStandardMaterial) {
+        const m = n.material.clone();
+        m.emissive.set(HEART_GLOW);
+        m.emissiveIntensity = 0;
+        n.material = m;
+        mats.push(m);
+      }
+    });
+    return { cloned: c, glowMats: mats };
+  }, [scene]);
   const groupRef = useRef<THREE.Group>(null);
   const rigidBodyRef = useRef<RapierRigidBody>(null);
   const worldPos = useRef<THREE.Vector3 | null>(null);
@@ -45,29 +75,24 @@ function HeartV2Model() {
   const beatT = useRef(0);
   const start = useRef({ x: 0, y: 0 });
   const anyOtherFocused = macbookFocused || iphoneFocused || mugFocused;
+  const drag = useDragThrow(rigidBodyRef, { enabled: !heartFocused && !anyOtherFocused, spawn: [-2.3, 7, 0] });
 
   useFrame((_, delta) => {
     if (rigidBodyRef.current) {
       const t = rigidBodyRef.current.translation();
       if (!worldPos.current) worldPos.current = new THREE.Vector3();
       worldPos.current.set(t.x, t.y, t.z);
+      setObjectPosition("heart" satisfies ObjectKey, t);
     }
     if (!groupRef.current) return;
-    if (hoverRef.current) {
-      beatT.current += delta;
-      const t = beatT.current % 1.5;
-      let s = 1;
-      if (t < 0.12) {
-        s = 1 + 0.12 * Math.sin((t / 0.12) * Math.PI);
-      } else if (t > 0.20 && t < 0.38) {
-        s = 1 + 0.07 * Math.sin(((t - 0.20) / 0.18) * Math.PI);
-      }
-      groupRef.current.scale.setScalar(s);
-    } else {
-      const cur = groupRef.current.scale.x;
-      groupRef.current.scale.setScalar(cur + (1 - cur) * 0.15);
-      beatT.current = 0;
-    }
+    // Always beating: a slow, subtle idle pulse; faster and stronger on hover.
+    const hovered = hoverRef.current;
+    beatT.current += delta;
+    const pulse = heartbeat(beatT.current % (hovered ? 1.5 : 1.9) / (hovered ? 1.5 : 1.9));
+    const target = 1 + pulse * (hovered ? 0.12 : 0.035);
+    const cur = groupRef.current.scale.x;
+    groupRef.current.scale.setScalar(cur + (target - cur) * 0.5);
+    setEmissiveIntensity(glowMats, (hovered ? 0.35 : 0.08) + pulse * (hovered ? 1.6 : 0.45));
   });
 
   useEffect(() => {
@@ -93,8 +118,9 @@ function HeartV2Model() {
             scale={1.5}
             onPointerEnter={() => { hoverRef.current = true; }}
             onPointerLeave={() => { hoverRef.current = false; }}
-            onPointerDown={(e: { clientX: number; clientY: number }) => {
+            onPointerDown={(e: ThreeEvent<PointerEvent>) => {
               start.current = { x: e.clientX, y: e.clientY };
+              drag.onPointerDown(e);
             }}
             onPointerUp={(e: { clientX: number; clientY: number }) => {
               const d = Math.hypot(e.clientX - start.current.x, e.clientY - start.current.y);
@@ -136,14 +162,20 @@ const HACK_LINES = [
 ];
 
 function drawHackerCanvas(ctx: CanvasRenderingContext2D, reveal: number, t: number) {
+  // Screen UVs are V-flipped relative to the canvas: draw mirrored so text reads upright.
+  ctx.save();
+  ctx.translate(0, MB_SCR.y1 + MB_SCR.y2);
+  ctx.scale(1, -1);
+  drawHackerUnflipped(ctx, reveal, t);
+  ctx.restore();
+}
+
+function drawHackerUnflipped(ctx: CanvasRenderingContext2D, reveal: number, t: number) {
   const { x1, y1, x2, y2 } = MB_SCR;
   const scrW = x2 - x1;
   const scrH = y2 - y1;
   const revealPx = Math.round(reveal * scrW);
   const frontierX = x1 + revealPx;
-
-  ctx.fillStyle = "#000";
-  ctx.fillRect(0, 0, 512, 512);
 
   if (revealPx > 0) {
     ctx.save();
@@ -171,6 +203,7 @@ function drawHackerCanvas(ctx: CanvasRenderingContext2D, reveal: number, t: numb
     ctx.restore();
   }
 
+  if (revealPx <= 0) return;
   const transW = MB_PIX * 5;
   for (let px = Math.max(x1, frontierX - transW); px < Math.min(x2, frontierX + MB_PIX); px += MB_PIX) {
     for (let py = y1; py < y2; py += MB_PIX) {
@@ -182,6 +215,83 @@ function drawHackerCanvas(ctx: CanvasRenderingContext2D, reveal: number, t: numb
       ctx.fillRect(px, py, MB_PIX, MB_PIX);
     }
   }
+}
+
+// Idle screen: crossfading slideshow of project screenshots.
+const SLIDE_PERIOD = 3.5;
+const SLIDE_FADE = 0.6;
+
+function drawCover(ctx: CanvasRenderingContext2D, img: HTMLImageElement, alpha: number) {
+  const { x1, y1, x2, y2 } = MB_SCR;
+  const w = x2 - x1, h = y2 - y1;
+  const s = Math.max(w / img.width, h / img.height);
+  const sw = w / s, sh = h / s;
+  ctx.save();
+  ctx.globalAlpha = alpha;
+  // Screen UVs are V-flipped relative to the canvas: mirror vertically within the screen rect.
+  ctx.translate(0, y1 + y2);
+  ctx.scale(1, -1);
+  ctx.drawImage(img, 0, 0, sw, sh, x1, y1, w, h); // top-aligned crop: headers are the recognisable part
+  ctx.restore();
+}
+
+function drawSlideshow(ctx: CanvasRenderingContext2D, imgs: HTMLImageElement[], t: number) {
+  ctx.fillStyle = "#000";
+  ctx.fillRect(0, 0, 512, 512);
+  if (imgs.length === 0) return;
+  const k = Math.floor(t / SLIDE_PERIOD);
+  const local = t - k * SLIDE_PERIOD;
+  drawCover(ctx, imgs[k % imgs.length], 0.8);
+  const fade = Math.max(0, (local - (SLIDE_PERIOD - SLIDE_FADE)) / SLIDE_FADE);
+  if (fade > 0) drawCover(ctx, imgs[(k + 1) % imgs.length], 0.8 * fade);
+}
+
+// Imperative three.js update, called every frame from useFrame. Kept outside the
+// component so React's immutability rules don't apply to the material/texture.
+function updateMacbookScreen(
+  mat: THREE.MeshStandardMaterial,
+  texture: THREE.CanvasTexture,
+  ctx: CanvasRenderingContext2D,
+  slides: HTMLImageElement[],
+  state: { lastKey: string },
+  reveal: number,
+  hackT: number,
+  t: number,
+) {
+  if (mat.emissiveMap !== texture) {
+    mat.emissiveMap = texture;
+    mat.needsUpdate = true;
+  }
+  mat.emissiveIntensity = 1 + reveal * 0.8; // hacker green blooms on hover
+  const key = drawSlideshowKey(slides, t);
+  if (reveal <= 0 && key === state.lastKey) return;
+  drawSlideshow(ctx, slides, t);
+  drawHackerCanvas(ctx, reveal, hackT);
+  state.lastKey = reveal > 0 ? "hack" : key;
+  texture.needsUpdate = true;
+}
+
+/** Identifies what drawSlideshow would draw, so unchanged frames skip the texture upload. */
+function drawSlideshowKey(imgs: HTMLImageElement[], t: number) {
+  if (imgs.length === 0) return "empty";
+  const k = Math.floor(t / SLIDE_PERIOD);
+  const fade = Math.max(0, (t - k * SLIDE_PERIOD - (SLIDE_PERIOD - SLIDE_FADE)) / SLIDE_FADE);
+  return `${imgs.length}:${k}:${Math.round(fade * 20)}`;
+}
+
+/** Loads live-project screenshots in the background; resolves into the returned ref's array. */
+function useProjectSlides() {
+  const slides = useRef<HTMLImageElement[]>([]);
+  useEffect(() => {
+    let cancelled = false;
+    for (const p of WEB_PROJECTS.filter((x) => x.status === "live")) {
+      const img = new Image();
+      img.onload = () => { if (!cancelled) slides.current.push(img); };
+      img.src = `/screenshots/${p.id}.webp`;
+    }
+    return () => { cancelled = true; };
+  }, []);
+  return slides;
 }
 
 // ── Generic object camera rig ────────────────────────────────────────────
@@ -256,19 +366,24 @@ function DimPlane() {
 
 function MacBookModel() {
   const { scene } = useGLTF("/assets/macbook.glb");
-  const { macbookFocused, setMacbookFocused } = useNavigation();
+  const { macbookFocused, setMacbookFocused, heartFocused, iphoneFocused, mugFocused } = useNavigation();
   const rigidBodyRef = useRef<RapierRigidBody>(null);
+  const drag = useDragThrow(rigidBodyRef, {
+    enabled: !macbookFocused && !heartFocused && !iphoneFocused && !mugFocused,
+    spawn: [-0.2, 9, 0],
+  });
   const worldPos = useRef<THREE.Vector3 | null>(null);
   const hoverRef = useRef(false);
   const revealRef = useRef(0);
   const hackTimeRef = useRef(0);
   const start = useRef({ x: 0, y: 0 });
 
-  const { cloned, hackCtx, hackTexture, origEmissiveMap, clonedMat } = useMemo((): {
+  const slides = useProjectSlides();
+  const screenState = useRef({ lastKey: "" });
+  const { cloned, hackCtx, hackTexture, clonedMat } = useMemo((): {
     cloned: THREE.Object3D;
     hackCtx: CanvasRenderingContext2D | null;
     hackTexture: THREE.CanvasTexture | null;
-    origEmissiveMap: THREE.Texture | null;
     clonedMat: THREE.MeshStandardMaterial | null;
   } => {
     const c = scene.clone();
@@ -279,23 +394,24 @@ function MacBookModel() {
         (n as THREE.Mesh).material = mat;
       }
     });
-    if (!mat) return { cloned: c, hackCtx: null, hackTexture: null, origEmissiveMap: null, clonedMat: null };
-    const origEmissiveMap = (mat as THREE.MeshStandardMaterial).emissiveMap;
+    if (!mat) return { cloned: c, hackCtx: null, hackTexture: null, clonedMat: null };
     const canvas = document.createElement("canvas");
     canvas.width = 512;
     canvas.height = 512;
     const ctx = canvas.getContext("2d")!;
     const texture = new THREE.CanvasTexture(canvas);
     texture.flipY = false;
-    return { cloned: c, hackCtx: ctx, hackTexture: texture, origEmissiveMap, clonedMat: mat };
+    texture.colorSpace = THREE.SRGBColorSpace;
+    return { cloned: c, hackCtx: ctx, hackTexture: texture, clonedMat: mat };
   }, [scene]);
 
-  useFrame((_, delta) => {
+  useFrame(({ clock }, delta) => {
     // Track world position for camera rig and overlay anchor
     if (rigidBodyRef.current) {
       const t = rigidBodyRef.current.translation();
       if (!worldPos.current) worldPos.current = new THREE.Vector3();
       worldPos.current.set(t.x, t.y, t.z);
+      setObjectPosition("macbook" satisfies ObjectKey, t);
     }
 
     // Hacker screen animation
@@ -306,18 +422,10 @@ function MacBookModel() {
     } else {
       revealRef.current = Math.max(0, revealRef.current - delta * 1.5);
     }
-    const rev = revealRef.current;
-    if (rev > 0) {
-      if (clonedMat.emissiveMap !== hackTexture) {
-        clonedMat.emissiveMap = hackTexture;
-        clonedMat.needsUpdate = true;
-      }
-      drawHackerCanvas(hackCtx, rev, hackTimeRef.current);
-      hackTexture.needsUpdate = true;
-    } else if (clonedMat.emissiveMap !== origEmissiveMap) {
-      clonedMat.emissiveMap = origEmissiveMap;
-      clonedMat.needsUpdate = true;
-    }
+    updateMacbookScreen(
+      clonedMat, hackTexture, hackCtx, slides.current, screenState.current,
+      revealRef.current, hackTimeRef.current, clock.getElapsedTime(),
+    );
   });
 
   useEffect(() => {
@@ -342,8 +450,9 @@ function MacBookModel() {
           scale={7}
           onPointerEnter={() => { hoverRef.current = true; }}
           onPointerLeave={() => { hoverRef.current = false; }}
-          onPointerDown={(e: { clientX: number; clientY: number }) => {
+          onPointerDown={(e: ThreeEvent<PointerEvent>) => {
             start.current = { x: e.clientX, y: e.clientY };
+            drag.onPointerDown(e);
           }}
           onPointerUp={(e: { clientX: number; clientY: number }) => {
             const d = Math.hypot(e.clientX - start.current.x, e.clientY - start.current.y);
@@ -362,6 +471,51 @@ const PHONE_HALF_H = 7.369 * 0.12;
 // Reusable identity quaternion — never mutated
 const IDENTITY_Q = new THREE.Quaternion();
 
+type PhoneScreen = { ctx: CanvasRenderingContext2D; texture: THREE.CanvasTexture; minute: number };
+
+// Lock screen: clock + monogram. Text is centred at x=65, the visible part of the screen UVs.
+function drawPhoneScreen(ctx: CanvasRenderingContext2D, now: Date) {
+  ctx.fillStyle = "#050810";
+  ctx.fillRect(0, 0, 256, 256);
+
+  const glow = ctx.createRadialGradient(128, 128, 20, 128, 128, 100);
+  glow.addColorStop(0, "rgba(100,200,140,0.25)");
+  glow.addColorStop(1, "rgba(0,0,0,0)");
+  ctx.fillStyle = glow;
+  ctx.fillRect(0, 0, 256, 256);
+
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+
+  // Clock
+  const hh = String(now.getHours()).padStart(2, "0");
+  const mm = String(now.getMinutes()).padStart(2, "0");
+  ctx.font = "600 30px sans-serif";
+  ctx.fillStyle = "#e8eaf2";
+  ctx.fillText(`${hh}:${mm}`, 65, 62);
+  ctx.font = "10px sans-serif";
+  ctx.fillStyle = "rgba(232,234,242,0.6)";
+  ctx.fillText(now.toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "short" }), 65, 84);
+
+  // Monogram
+  ctx.font = "bold 40px sans-serif";
+  ctx.fillStyle = "#6adc9e";
+  ctx.fillText(":^)", 65, 124);
+
+  // Role tag
+  ctx.font = "14px monospace";
+  ctx.fillStyle = "#c8aaff";
+  ctx.fillText("<ContactMe/>", 65, 160);
+}
+
+function tickPhoneClock(screen: PhoneScreen) {
+  const now = new Date();
+  if (now.getMinutes() === screen.minute) return;
+  screen.minute = now.getMinutes();
+  drawPhoneScreen(screen.ctx, now);
+  screen.texture.needsUpdate = true;
+}
+
 function IPhoneModel() {
   const { scene } = useGLTF("/assets/iphone.glb");
   const rigidBodyRef = useRef<RapierRigidBody>(null);
@@ -379,6 +533,18 @@ function IPhoneModel() {
   const worldPos = useRef<THREE.Vector3 | null>(null);
   const startClick = useRef({ x: 0, y: 0 });
   const anyOtherFocused = macbookFocused || heartFocused || mugFocused;
+  const drag = useDragThrow(rigidBodyRef, {
+    enabled: !iphoneFocused && !anyOtherFocused,
+    spawn: [1.5, 6.5, 0.7],
+    // Settled phone is kinematic (for the stand-up hover); make it dynamic again to throw it.
+    onGrab: () => {
+      const rb = rigidBodyRef.current;
+      if (rb && settledRef.current) rb.setBodyType(rapier.RigidBodyType.Dynamic, true);
+      settledRef.current = false;
+      hasMovedRef.current = true;
+      hoverT.current = 0;
+    },
+  });
 
   useFrame(() => {
     const rb = rigidBodyRef.current;
@@ -388,9 +554,11 @@ function IPhoneModel() {
       const t = rb.translation();
       if (!worldPos.current) worldPos.current = new THREE.Vector3();
       worldPos.current.set(t.x, t.y, t.z);
+      setObjectPosition("iphone" satisfies ObjectKey, t);
     }
 
     if (!settledRef.current) {
+      if (drag.isDragging()) return;
       const linVel = rb.linvel();
       const angVel = rb.angvel();
       const speed = Math.hypot(linVel.x, linVel.y, linVel.z);
@@ -439,7 +607,7 @@ function IPhoneModel() {
     rb.setNextKinematicRotation(scratchQ.current);
   });
 
-  const cloned = useMemo(() => {
+  const { cloned, phoneScreen } = useMemo(() => {
     const c = scene.clone();
 
     // Build a canvas texture for the screen (Object_12 has emissive [1,1,1])
@@ -449,32 +617,12 @@ function IPhoneModel() {
     canvas.width = 256;
     canvas.height = 256;
     const ctx = canvas.getContext("2d")!;
-
-    // Dark phone screen background
-    ctx.fillStyle = "#050810";
-    ctx.fillRect(0, 0, 256, 256);
-
-    // Subtle radial glow from centre
-    const glow = ctx.createRadialGradient(128, 128, 20, 128, 128, 100);
-    glow.addColorStop(0, "rgba(100,200,140,0.25)");
-    glow.addColorStop(1, "rgba(0,0,0,0)");
-    ctx.fillStyle = glow;
-    ctx.fillRect(0, 0, 256, 256);
-
-    // Monogram — sized to fit well within the UV-visible region (10-90% of canvas)
-    ctx.font = "bold 48px sans-serif";
-    ctx.textAlign = "center";
-    ctx.textBaseline = "middle";
-    ctx.fillStyle = "#6adc9e";
-    ctx.fillText(":^)", 65, 112);
-
-    // Role tag
-    ctx.font = "14px monospace";
-    ctx.fillStyle = "#c8aaff";
-    ctx.fillText("<ContactMe/>", 65, 152);
+    drawPhoneScreen(ctx, new Date());
 
     const texture = new THREE.CanvasTexture(canvas);
     texture.flipY = false;
+
+    const screen: PhoneScreen = { ctx, texture, minute: new Date().getMinutes() };
 
     c.traverse((child) => {
       if (child instanceof THREE.Mesh) {
@@ -492,8 +640,10 @@ function IPhoneModel() {
       }
     });
 
-    return c;
+    return { cloned: c, phoneScreen: screen };
   }, [scene]);
+
+  useFrame(() => tickPhoneClock(phoneScreen));
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -517,8 +667,9 @@ function IPhoneModel() {
           scale={0.08}
           onPointerEnter={() => { hoverRef.current = true; }}
           onPointerLeave={() => { hoverRef.current = false; }}
-          onPointerDown={(e: { clientX: number; clientY: number }) => {
+          onPointerDown={(e: ThreeEvent<PointerEvent>) => {
             startClick.current = { x: e.clientX, y: e.clientY };
+            drag.onPointerDown(e);
           }}
           onPointerUp={(e: { clientX: number; clientY: number }) => {
             const d = Math.hypot(e.clientX - startClick.current.x, e.clientY - startClick.current.y);
@@ -548,6 +699,102 @@ function buildMugLabelTexture(): THREE.CanvasTexture {
   return new THREE.CanvasTexture(canvas);
 }
 
+// ── Mug steam ────────────────────────────────────────────────────────────
+const steamVertex = `
+  varying vec2 vUv;
+  void main() {
+    vUv = uv;
+    gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+  }
+`;
+
+const steamFragment = `
+  uniform float uTime;
+  uniform float uOpacity;
+  varying vec2 vUv;
+
+  float hash(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
+  float noise(vec2 p) {
+    vec2 i = floor(p), f = fract(p);
+    f = f * f * (3.0 - 2.0 * f);
+    return mix(mix(hash(i), hash(i + vec2(1.0, 0.0)), f.x),
+               mix(hash(i + vec2(0.0, 1.0)), hash(i + vec2(1.0, 1.0)), f.x), f.y);
+  }
+
+  void main() {
+    vec2 uv = vUv;
+    float t = uTime * 0.35;
+    // Sway grows with height, like rising steam
+    uv.x += (noise(vec2(uv.y * 2.0 - t, 3.1)) - 0.5) * 0.55 * uv.y;
+    float n = noise(vec2(uv.x * 4.0, uv.y * 3.0 - t * 2.0)) * 0.6
+            + noise(vec2(uv.x * 9.0, uv.y * 6.0 - t * 3.2)) * 0.4;
+    float column = smoothstep(0.5, 0.12, abs(uv.x - 0.5));
+    float fade = smoothstep(0.0, 0.18, uv.y) * smoothstep(1.0, 0.4, uv.y);
+    float a = smoothstep(0.42, 0.85, n) * column * fade * uOpacity;
+    gl_FragColor = vec4(vec3(1.0), a * 0.28);
+  }
+`;
+
+const STEAM_UP = new THREE.Vector3(0, 1, 0);
+
+function updateSteam(
+  group: THREE.Group,
+  mat: THREE.ShaderMaterial,
+  body: RapierRigidBody,
+  rimY: number,
+  height: number,
+  t: number,
+  scratch: { q: THREE.Quaternion; up: THREE.Vector3 },
+) {
+  const p = body.translation();
+  const r = body.rotation();
+  const v = body.linvel();
+  scratch.q.set(r.x, r.y, r.z, r.w);
+  scratch.up.copy(STEAM_UP).applyQuaternion(scratch.q);
+  group.position.set(
+    p.x + scratch.up.x * rimY,
+    p.y + scratch.up.y * rimY + height / 2,
+    p.z + scratch.up.z * rimY,
+  );
+  // Only steam when upright and at rest
+  const upright = THREE.MathUtils.smoothstep(scratch.up.y, 0.9, 0.98);
+  const still = Math.hypot(v.x, v.y, v.z) < 0.3 ? 1 : 0;
+  const u = mat.uniforms;
+  u.uTime.value = t;
+  u.uOpacity.value += (upright * still - u.uOpacity.value) * 0.03;
+  group.visible = u.uOpacity.value > 0.01;
+}
+
+function MugSteam({ body, rimY, width }: { body: React.RefObject<RapierRigidBody | null>; rimY: number; width: number }) {
+  const groupRef = useRef<THREE.Group>(null);
+  const matRef = useRef<THREE.ShaderMaterial>(null);
+  const scratch = useRef({ q: new THREE.Quaternion(), up: new THREE.Vector3() });
+  const height = width * 2.2;
+
+  useFrame(({ clock }) => {
+    if (!groupRef.current || !matRef.current || !body.current) return;
+    updateSteam(groupRef.current, matRef.current, body.current, rimY, height, clock.getElapsedTime(), scratch.current);
+  });
+
+  return (
+    <group ref={groupRef} visible={false}>
+      <Billboard lockX lockZ>
+        <mesh>
+          <planeGeometry args={[width * 0.9, height]} />
+          <shaderMaterial
+            ref={matRef}
+            vertexShader={steamVertex}
+            fragmentShader={steamFragment}
+            uniforms={{ uTime: { value: 0 }, uOpacity: { value: 0 } }}
+            transparent
+            depthWrite={false}
+          />
+        </mesh>
+      </Billboard>
+    </group>
+  );
+}
+
 function MugModel() {
   const { scene } = useGLTF('/assets/mug.glb');
   const { mugFocused, setMugFocused, macbookFocused, heartFocused, iphoneFocused } = useNavigation();
@@ -557,8 +804,9 @@ function MugModel() {
   const hoverRef = useRef(false);
   const start = useRef({ x: 0, y: 0 });
   const anyOtherFocused = macbookFocused || heartFocused || iphoneFocused;
+  const drag = useDragThrow(rigidBodyRef, { enabled: !mugFocused && !anyOtherFocused, spawn: [2.5, 4.0, 0.7] });
 
-  const cloned = useMemo(() => {
+  const { cloned, rimY, mugWidth } = useMemo(() => {
     const labelTex = buildMugLabelTexture();
     const c = scene.clone();
     c.traverse((child) => {
@@ -594,7 +842,12 @@ function MugModel() {
         m.needsUpdate = true;
       }
     });
-    return c;
+    const box = new THREE.Box3().setFromObject(c);
+    return {
+      cloned: c,
+      rimY: box.max.y * MUG_SCALE,
+      mugWidth: (box.max.x - box.min.x) * MUG_SCALE,
+    };
   }, [scene]);
 
   useFrame((_, delta) => {
@@ -602,6 +855,7 @@ function MugModel() {
       const t = rigidBodyRef.current.translation();
       if (!worldPos.current) worldPos.current = new THREE.Vector3();
       worldPos.current.set(t.x, t.y, t.z);
+      setObjectPosition("mug" satisfies ObjectKey, t);
     }
     if (groupRef.current && hoverRef.current) {
       groupRef.current.rotation.y -= delta * 1.6;
@@ -624,6 +878,7 @@ function MugModel() {
         camOff={[0, 0.5, 0.6]}
         lookOff={[0, 0.2, 0]}
       />
+      <MugSteam body={rigidBodyRef} rimY={rimY} width={mugWidth} />
       <RigidBody ref={rigidBodyRef} position={[2.5, 4.0, 0.7]} restitution={0.2} friction={1.0} linearDamping={0.5} angularDamping={0.5} colliders="cuboid">
         <group ref={groupRef}>
           <primitive
@@ -631,8 +886,9 @@ function MugModel() {
             scale={MUG_SCALE}
             onPointerEnter={() => { hoverRef.current = true; }}
             onPointerLeave={() => { hoverRef.current = false; }}
-            onPointerDown={(e: { clientX: number; clientY: number }) => {
+            onPointerDown={(e: ThreeEvent<PointerEvent>) => {
               start.current = { x: e.clientX, y: e.clientY };
+              drag.onPointerDown(e);
             }}
             onPointerUp={(e: { clientX: number; clientY: number }) => {
               const d = Math.hypot(e.clientX - start.current.x, e.clientY - start.current.y);
@@ -653,8 +909,17 @@ export default function PhysicsModels() {
       <RigidBody type="fixed" position={[0, -2, 0]}>
         <CuboidCollider args={[20, 0.1, 10]} />
       </RigidBody>
+      {/* Invisible walls keep thrown objects in view */}
+      <RigidBody type="fixed">
+        <CuboidCollider args={[0.2, 15, 4]} position={[-7, 13, 0]} />
+        <CuboidCollider args={[0.2, 15, 4]} position={[7, 13, 0]} />
+        <CuboidCollider args={[7, 15, 0.2]} position={[0, 13, -3.6]} />
+        <CuboidCollider args={[7, 15, 0.2]} position={[0, 13, 3.6]} />
+      </RigidBody>
 
       <DimPlane />
+      {/* Dust drifting through the key light */}
+      <Sparkles count={70} scale={[14, 7, 6]} position={[0, 2, 0]} size={2.2} speed={0.25} opacity={0.45} noise={1} color="#ffe8c8" />
       <TableModel />
       <HeartV2Model />
       <MacBookModel />

@@ -7,7 +7,9 @@ import { Physics } from "@react-three/rapier";
 import { Suspense } from "react";
 import GradientBackground from "./GradientBackground";
 import PhysicsModels from "./PhysicsModels";
+import Effects from "./Effects";
 import { useNavigation } from "@/context/NavigationContext";
+import { isDragging } from "./sceneStore";
 
 function CameraRig() {
   const { macbookFocused, heartFocused, iphoneFocused, mugFocused } = useNavigation();
@@ -24,6 +26,7 @@ function CameraRig() {
 
   useFrame((state) => {
     if (macbookFocused || heartFocused || iphoneFocused || mugFocused) return;
+    if (isDragging()) return; // keep the drag plane stable while an object is held
     const targetX = mouse.current.x * 2.6;
     const targetY = mouse.current.y * 1.5 + 5;
     state.camera.position.x += (targetX - state.camera.position.x) * 0.04;
@@ -71,6 +74,7 @@ export default function HeroScene() {
           <PhysicsModels />
         </Physics>
       </Suspense>
+      <Effects />
     </Canvas>
   );
 }

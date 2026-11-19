@@ -157,50 +157,53 @@ const SERIF = "Georgia, 'Times New Roman', serif";
 const SANS  = "'Helvetica Neue', Arial, sans-serif";
 const RED   = "#c0392b";
 
+function VideoPlayer() {
+  return (
+    <figure className="mt-12 border-t border-gray-100 pt-8 max-w-4xl mx-auto">
+      <div className="overflow-hidden rounded-lg shadow-md border border-gray-200 bg-black">
+        <video 
+          autoPlay 
+          loop 
+          muted 
+          playsInline 
+          className="w-full h-auto block"
+        >
+          <source src="/gifs/atrium.mp4" type="video/mp4" />
+          Your browser does not support the video tag.
+        </video>
+      </div>
+      
+      <figcaption style={{paddingTop: '.5rem', paddingBottom:'.5rem'}} className="mt-4 pt-4 text-justify font-serif text-sm leading-relaxed text-gray-800">
+        <span className="font-bold">Figure 1:</span> High-fidelity simulation of patient-specific left atrial hemodynamics. 
+        From left to right: the volumetric depiction of the blood residence time and the corresponding velocity field 
+        evolving over four cardiac cycles. The computational model is available from this{" "}
+        <a 
+          href="https://doi.org/10.5281/zenodo.13829891" 
+          target="_blank" 
+          rel="noopener noreferrer"
+          className="text-red-700 decoration-red-300 underline-offset-4 hover:text-red-900 transition-colors"
+        >
+          open access dataset
+        </a>.
+      </figcaption>
+    </figure>
+  );
+}
+
 export default function ResearchOverlay() {
-  const { heartFocused, setHeartFocused } = useNavigation();
+  const { heartFocused } = useNavigation();
+  return heartFocused ? <ResearchOverlayContent /> : null;
+}
+
+function ResearchOverlayContent() {
+  const { setHeartFocused } = useNavigation();
   const [visible, setVisible] = useState(false);
 
   useEffect(() => {
-    if (!heartFocused) { setVisible(false); return; }
     const t = setTimeout(() => setVisible(true), 900);
     return () => clearTimeout(t);
-  }, [heartFocused]);
+  }, []);
 
-  if (!heartFocused) return null;
-
-  const VideoPlayer = () => {
-    return (
-      <figure className="mt-12 border-t border-gray-100 pt-8 max-w-4xl mx-auto">
-        <div className="overflow-hidden rounded-lg shadow-md border border-gray-200 bg-black">
-          <video 
-            autoPlay 
-            loop 
-            muted 
-            playsInline 
-            className="w-full h-auto block"
-          >
-            <source src="/gifs/atrium.mp4" type="video/mp4" />
-            Your browser does not support the video tag.
-          </video>
-        </div>
-        
-        <figcaption style={{paddingTop: '.5rem', paddingBottom:'.5rem'}} className="mt-4 pt-4 text-justify font-serif text-sm leading-relaxed text-gray-800">
-          <span className="font-bold">Figure 1:</span> High-fidelity simulation of patient-specific left atrial hemodynamics. 
-          From left to right: the volumetric depiction of the blood residence time and the corresponding velocity field 
-          evolving over four cardiac cycles. The computational model is avaiable from this{" "}
-          <a 
-            href="https://doi.org/10.5281/zenodo.13829891" 
-            target="_blank" 
-            rel="noopener noreferrer"
-            className="text-red-700 decoration-red-300 underline-offset-4 hover:text-red-900 transition-colors"
-          >
-            open access dataset
-          </a>.
-        </figcaption>
-      </figure>
-    );
-  };
 
 
 
@@ -315,7 +318,7 @@ export default function ResearchOverlay() {
               Abstract
             </span>
             <p style={{ fontSize: "0.82rem", lineHeight: 1.72, color: "#333", textAlign: "justify" }}>
-            I specialize in the Data Engineering of human physiology. My research focuses on building automated, validated pipelines that translate raw medical imaging (CT/MRA) into structured, high-fidelity datasets for Computational Fluid Dynamics (CFD). By evolving my work from neurovascular stability (Brain Aneurysms) to cardiovascular mechanics (Atrial Fibrillation), I have developed a methodology centered on objective morphometry and statistical discriminants. My objective is to replace manual clinical workflows with physics-informed digital twins to move risk assessment "Beyond CHA₂DS₂-VASc."
+            I specialize in the Data Engineering of human physiology. My research focuses on building automated, validated pipelines that translate raw medical imaging (CT/MRA) into structured, high-fidelity datasets for Computational Fluid Dynamics (CFD). By evolving my work from neurovascular stability (Brain Aneurysms) to cardiovascular mechanics (Atrial Fibrillation), I have developed a methodology centered on objective morphometry and statistical discriminants. My objective is to replace manual clinical workflows with physics-informed digital twins to move risk assessment &ldquo;Beyond CHA₂DS₂-VASc.&rdquo;
             </p>
           </div>
 
@@ -338,7 +341,7 @@ export default function ResearchOverlay() {
                 Neurovascular Data Foundations
               </h2>
               <p style={{ fontSize: "0.8rem", marginBottom: "10px", color: "#333", lineHeight: 1.72, textAlign: "justify" }}>
-              My journey began with the "Data Cleaning" of the human vascular tree. While studying Intracranial Aneurysms, I identified that the lack of standardized anatomical features prevented large-scale statistical analysis.
+              My journey began with the &ldquo;Data Cleaning&rdquo; of the human vascular tree. While studying Intracranial Aneurysms, I identified that the lack of standardized anatomical features prevented large-scale statistical analysis.
               </p>
               <p style={{ fontSize: "0.8rem", color: "#333", lineHeight: 1.72, textAlign: "justify" }}>
               To solve this, I engineered {link("morphMan", "https://github.com/KVSlab/morphMan")} and {link("VamPy", "https://github.com/KVSlab/VaMPy")} , two Python-based ETL (Extract, Transform, Load) tools for medical surfaces. This allowed me to automate the landmarking of vascular curves in the internal carotid artery, proving statistically that specific geometric features correlate with aneurysm initiation.

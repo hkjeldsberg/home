@@ -13,8 +13,26 @@ const jetbrainsMono = JetBrains_Mono({
   variable: "--font-jetbrains-mono",
 });
 
+const title = "hkjeldsberg – PhD, Data Engineer/Scientist, Lead Consultant";
+const description =
+  "Henrik Kjeldsberg – data engineer, researcher and software developer. PhD in computational cardiovascular modelling, plus a collection of web projects.";
+
 export const metadata: Metadata = {
-  title: "hkjeldsberg – PhD, Data Engineer/Scientist, Lead Consultant",
+  metadataBase: new URL("https://www.hkjeldsberg.no"),
+  title,
+  description,
+  openGraph: {
+    type: "website",
+    url: "/",
+    siteName: "hkjeldsberg",
+    title,
+    description,
+  },
+  twitter: {
+    card: "summary_large_image",
+    title,
+    description,
+  },
 };
 
 export default function RootLayout({

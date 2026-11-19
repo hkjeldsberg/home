@@ -1,11 +1,8 @@
 "use client";
 
-import { createContext, useContext, useState, useCallback } from "react";
+import { createContext, useContext, useState } from "react";
 
 interface NavCtx {
-  navigateTo: (path: string) => void;
-  pending: string | null;
-  clearPending: () => void;
   macbookFocused: boolean;
   setMacbookFocused: (b: boolean) => void;
   heartFocused: boolean;
@@ -17,9 +14,6 @@ interface NavCtx {
 }
 
 const NavigationContext = createContext<NavCtx>({
-  navigateTo: () => {},
-  pending: null,
-  clearPending: () => {},
   macbookFocused: false,
   setMacbookFocused: () => {},
   heartFocused: false,
@@ -34,17 +28,25 @@ export function useNavigation() {
   return useContext(NavigationContext);
 }
 
+export type FocusedObject = "macbook" | "heart" | "iphone" | "mug";
+
+/** The currently focused 3D object, or null. */
+export function useFocusedObject(): FocusedObject | null {
+  const { macbookFocused, heartFocused, iphoneFocused, mugFocused } = useNavigation();
+  if (macbookFocused) return "macbook";
+  if (heartFocused) return "heart";
+  if (iphoneFocused) return "iphone";
+  if (mugFocused) return "mug";
+  return null;
+}
+
 export function NavigationProvider({ children }: { children: React.ReactNode }) {
-  const [pending, setPending] = useState<string | null>(null);
   const [macbookFocused, setMacbookFocused] = useState(false);
   const [heartFocused, setHeartFocused] = useState(false);
   const [iphoneFocused, setIphoneFocused] = useState(false);
   const [mugFocused, setMugFocused] = useState(false);
-  const navigateTo = useCallback((path: string) => setPending(path), []);
-  const clearPending = useCallback(() => setPending(null), []);
   return (
     <NavigationContext.Provider value={{
-      navigateTo, pending, clearPending,
       macbookFocused, setMacbookFocused,
       heartFocused, setHeartFocused,
       iphoneFocused, setIphoneFocused,

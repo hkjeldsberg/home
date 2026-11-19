@@ -39,3 +39,6 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# source screenshots (originals, converted to public/screenshots/*.webp)
+/projects/

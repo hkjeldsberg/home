@@ -121,16 +121,18 @@ const skills = [
 ];
 
 export default function CvOverlay() {
-  const { mugFocused, setMugFocused } = useNavigation();
+  const { mugFocused } = useNavigation();
+  return mugFocused ? <CvOverlayContent /> : null;
+}
+
+function CvOverlayContent() {
+  const { setMugFocused } = useNavigation();
   const [visible, setVisible] = useState(false);
 
   useEffect(() => {
-    if (!mugFocused) { setVisible(false); return; }
     const t = setTimeout(() => setVisible(true), 900);
     return () => clearTimeout(t);
-  }, [mugFocused]);
-
-  if (!mugFocused) return null;
+  }, []);
 
   return (
     <>

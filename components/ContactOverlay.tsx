@@ -31,20 +31,23 @@ const credits = [
 ];
 
 export default function ContactOverlay() {
-  const { iphoneFocused, setIphoneFocused } = useNavigation();
+  const { iphoneFocused } = useNavigation();
+  return iphoneFocused ? <ContactOverlayContent /> : null;
+}
+
+function ContactOverlayContent() {
+  const { setIphoneFocused } = useNavigation();
   const [visible, setVisible]   = useState(false);
-  const [timeStr, setTimeStr]   = useState("");
+  const [timeStr] = useState(() =>
+    new Date().toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", hour12: false })
+  );
   const [darkMode, setDarkMode] = useState(false);
   const [view, setView]         = useState<"contact" | "credits">("contact");
 
   useEffect(() => {
-    if (!iphoneFocused) { setVisible(false); setView("contact"); return; }
-    setTimeStr(new Date().toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", hour12: false }));
     const t = setTimeout(() => setVisible(true), 900);
     return () => clearTimeout(t);
-  }, [iphoneFocused]);
-
-  if (!iphoneFocused) return null;
+  }, []);
 
   // Theme tokens
   const bg      = darkMode ? "#1c1c1e" : "#f2f2f7";
