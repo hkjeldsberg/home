@@ -167,7 +167,7 @@ const WEB_PROJECTS: Project[] = [
     name: "Gryn",
     url: "gryn.vercel.app",
     desc: "Personal-finance app for tracking spending, budgets and savings.",
-    stack: ["Vercel"],
+    stack: ["Next.js"],
     status: "live",
     href: "https://gryn.vercel.app/",
     bg: "linear-gradient(160deg, #c8ebdb 0 40%, #eae7e0 40%)",
