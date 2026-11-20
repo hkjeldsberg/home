@@ -8,6 +8,7 @@ import * as THREE from "three";
 import { useNavigation } from "@/context/NavigationContext";
 import { setObjectPosition, type ObjectKey } from "./sceneStore";
 import { useDragThrow } from "./useDragThrow";
+import { useLandingSquash } from "./useLandingSquash";
 
 // ── Static table on the floor ─────────────────────────────────────────────
 // Table raw bounds (after its 90° node rotation): X ±1.0, Y ±0.5, Z ±0.601
@@ -16,7 +17,7 @@ import { useDragThrow } from "./useDragThrow";
 function TableModel() {
   const { scene } = useGLTF("/assets/table.glb");
   const cloned = useMemo(() => {
-    const c = scene.clone();
+    const c = withShadows(scene.clone());
     c.traverse((child) => {
       if (child instanceof THREE.Mesh) {
         child.material = (child.material as THREE.MeshStandardMaterial).clone();
@@ -36,10 +37,21 @@ function TableModel() {
   );
 }
 
+/** All meshes cast and receive the key light's shadow. */
+function withShadows<T extends THREE.Object3D>(obj: T): T {
+  obj.traverse((n) => {
+    if (n instanceof THREE.Mesh) {
+      n.castShadow = true;
+      n.receiveShadow = true;
+    }
+  });
+  return obj;
+}
+
 function HeartV2Model() {
   const { scene } = useGLTF("/assets/heart.glb");
   const { heartFocused, setHeartFocused, macbookFocused, iphoneFocused, mugFocused } = useNavigation();
-  const cloned = useMemo(() => scene.clone(), [scene]);
+  const cloned = useMemo(() => withShadows(scene.clone()), [scene]);
   const groupRef = useRef<THREE.Group>(null);
   const rigidBodyRef = useRef<RapierRigidBody>(null);
   const worldPos = useRef<THREE.Vector3 | null>(null);
@@ -48,6 +60,8 @@ function HeartV2Model() {
   const start = useRef({ x: 0, y: 0 });
   const anyOtherFocused = macbookFocused || iphoneFocused || mugFocused;
   const drag = useDragThrow(rigidBodyRef, { enabled: !heartFocused && !anyOtherFocused, spawn: [-2.3, 7, 0] });
+  const { group: squashRef, onCollisionEnter: onLand } = useLandingSquash(rigidBodyRef);
+  const squeezeT = useRef(-1); // single beat on click; -1 = idle
 
   useFrame((_, delta) => {
     if (rigidBodyRef.current) {
@@ -57,7 +71,13 @@ function HeartV2Model() {
       setObjectPosition("heart" satisfies ObjectKey, t);
     }
     if (!groupRef.current) return;
-    if (hoverRef.current) {
+    if (squeezeT.current >= 0) {
+      // One squeeze on click
+      squeezeT.current += delta;
+      const p = squeezeT.current / 0.45;
+      if (p >= 1) squeezeT.current = -1;
+      groupRef.current.scale.setScalar(1 + 0.15 * Math.sin(Math.PI * Math.min(p, 1)));
+    } else if (hoverRef.current) {
       beatT.current += delta;
       const t = beatT.current % 1.5;
       let s = 1;
@@ -90,22 +110,27 @@ function HeartV2Model() {
         camOff={[0, 0.5, 0.7]}
         lookOff={[0, 0.2, 0]}
       />
-      <RigidBody ref={rigidBodyRef} position={[-2.3, 7, 0]} rotation={[0, Math.PI / 12, 0]} restitution={0.2} friction={1.0} linearDamping={0.5} angularDamping={0.5} colliders="cuboid">
-        <group ref={groupRef}>
-          <primitive
-            object={cloned}
-            scale={1.5}
-            onPointerEnter={() => { hoverRef.current = true; }}
-            onPointerLeave={() => { hoverRef.current = false; }}
-            onPointerDown={(e: ThreeEvent<PointerEvent>) => {
-              start.current = { x: e.clientX, y: e.clientY };
-              drag.onPointerDown(e);
-            }}
-            onPointerUp={(e: { clientX: number; clientY: number }) => {
-              const d = Math.hypot(e.clientX - start.current.x, e.clientY - start.current.y);
-              if (d < 5 && !heartFocused && !anyOtherFocused) setHeartFocused(true);
-            }}
-          />
+      <RigidBody ref={rigidBodyRef} position={[-2.3, 7, 0]} rotation={[0, Math.PI / 12, 0]} restitution={0.2} friction={1.0} linearDamping={0.5} angularDamping={0.5} colliders="cuboid" onCollisionEnter={onLand}>
+        <group ref={squashRef}>
+          <group ref={groupRef}>
+            <primitive
+              object={cloned}
+              scale={1.5}
+              onPointerEnter={() => { hoverRef.current = true; }}
+              onPointerLeave={() => { hoverRef.current = false; }}
+              onPointerDown={(e: ThreeEvent<PointerEvent>) => {
+                start.current = { x: e.clientX, y: e.clientY };
+                drag.onPointerDown(e);
+              }}
+              onPointerUp={(e: { clientX: number; clientY: number }) => {
+                const d = Math.hypot(e.clientX - start.current.x, e.clientY - start.current.y);
+                if (d < 5 && !heartFocused && !anyOtherFocused) {
+                squeezeT.current = 0;
+                setHeartFocused(true);
+              }
+              }}
+            />
+          </group>
         </group>
       </RigidBody>
     </>
@@ -300,6 +325,7 @@ function MacBookModel() {
     enabled: !macbookFocused && !heartFocused && !iphoneFocused && !mugFocused,
     spawn: [-0.2, 9, 0],
   });
+  const { group: squashRef, onCollisionEnter: onLand } = useLandingSquash(rigidBodyRef);
   const worldPos = useRef<THREE.Vector3 | null>(null);
   const hoverRef = useRef(false);
   const revealRef = useRef(0);
@@ -313,7 +339,7 @@ function MacBookModel() {
     origEmissiveMap: THREE.Texture | null;
     clonedMat: THREE.MeshStandardMaterial | null;
   } => {
-    const c = scene.clone();
+    const c = withShadows(scene.clone());
     let mat: THREE.MeshStandardMaterial | null = null;
     c.traverse((n) => {
       if (n instanceof THREE.Mesh && !mat) {
@@ -368,21 +394,23 @@ function MacBookModel() {
         camOff={[0, 0.38, 0.55]}
         lookOff={[0, 0.28, 0]}
       />
-      <RigidBody ref={rigidBodyRef} position={[-0.2, 9, 0]} restitution={0.2} friction={1.0} linearDamping={0.5} angularDamping={0.5} colliders="cuboid">
-        <primitive
-          object={cloned}
-          scale={7}
-          onPointerEnter={() => { hoverRef.current = true; }}
-          onPointerLeave={() => { hoverRef.current = false; }}
-          onPointerDown={(e: ThreeEvent<PointerEvent>) => {
-            start.current = { x: e.clientX, y: e.clientY };
-            drag.onPointerDown(e);
-          }}
-          onPointerUp={(e: { clientX: number; clientY: number }) => {
-            const d = Math.hypot(e.clientX - start.current.x, e.clientY - start.current.y);
-            if (d < 5 && !macbookFocused) setMacbookFocused(true);
-          }}
-        />
+      <RigidBody ref={rigidBodyRef} position={[-0.2, 9, 0]} restitution={0.2} friction={1.0} linearDamping={0.5} angularDamping={0.5} colliders="cuboid" onCollisionEnter={onLand}>
+        <group ref={squashRef}>
+          <primitive
+            object={cloned}
+            scale={7}
+            onPointerEnter={() => { hoverRef.current = true; }}
+            onPointerLeave={() => { hoverRef.current = false; }}
+            onPointerDown={(e: ThreeEvent<PointerEvent>) => {
+              start.current = { x: e.clientX, y: e.clientY };
+              drag.onPointerDown(e);
+            }}
+            onPointerUp={(e: { clientX: number; clientY: number }) => {
+              const d = Math.hypot(e.clientX - start.current.x, e.clientY - start.current.y);
+              if (d < 5 && !macbookFocused) setMacbookFocused(true);
+            }}
+          />
+        </group>
       </RigidBody>
     </>
   );
@@ -469,6 +497,7 @@ function IPhoneModel() {
       hoverT.current = 0;
     },
   });
+  const { group: squashRef, onCollisionEnter: onLand } = useLandingSquash(rigidBodyRef);
 
   useFrame(() => {
     const rb = rigidBodyRef.current;
@@ -532,7 +561,7 @@ function IPhoneModel() {
   });
 
   const { cloned, phoneScreen } = useMemo(() => {
-    const c = scene.clone();
+    const c = withShadows(scene.clone());
 
     // Build a canvas texture for the screen (Object_12 has emissive [1,1,1])
     // Screen UV range is [0.1, 0.9] in both axes on a square canvas.
@@ -585,21 +614,23 @@ function IPhoneModel() {
         camOff={[0, 0.6, 0.5]}
         lookOff={[0, 0.4, 0]}
       />
-      <RigidBody ref={rigidBodyRef} rotation={[0, -Math.PI / 16, 0]} position={[1.5, 6.5, 0.7]} restitution={0.3} friction={0.9} linearDamping={0.5} angularDamping={0.5} colliders="cuboid">
-        <primitive
-          object={cloned}
-          scale={0.08}
-          onPointerEnter={() => { hoverRef.current = true; }}
-          onPointerLeave={() => { hoverRef.current = false; }}
-          onPointerDown={(e: ThreeEvent<PointerEvent>) => {
-            startClick.current = { x: e.clientX, y: e.clientY };
-            drag.onPointerDown(e);
-          }}
-          onPointerUp={(e: { clientX: number; clientY: number }) => {
-            const d = Math.hypot(e.clientX - startClick.current.x, e.clientY - startClick.current.y);
-            if (d < 5 && !iphoneFocused && !anyOtherFocused) setIphoneFocused(true);
-          }}
-        />
+      <RigidBody ref={rigidBodyRef} rotation={[0, -Math.PI / 16, 0]} position={[1.5, 6.5, 0.7]} restitution={0.3} friction={0.9} linearDamping={0.5} angularDamping={0.5} colliders="cuboid" onCollisionEnter={onLand}>
+        <group ref={squashRef}>
+          <primitive
+            object={cloned}
+            scale={0.08}
+            onPointerEnter={() => { hoverRef.current = true; }}
+            onPointerLeave={() => { hoverRef.current = false; }}
+            onPointerDown={(e: ThreeEvent<PointerEvent>) => {
+              startClick.current = { x: e.clientX, y: e.clientY };
+              drag.onPointerDown(e);
+            }}
+            onPointerUp={(e: { clientX: number; clientY: number }) => {
+              const d = Math.hypot(e.clientX - startClick.current.x, e.clientY - startClick.current.y);
+              if (d < 5 && !iphoneFocused && !anyOtherFocused) setIphoneFocused(true);
+            }}
+          />
+        </group>
       </RigidBody>
     </>
   );
@@ -633,10 +664,11 @@ function MugModel() {
   const start = useRef({ x: 0, y: 0 });
   const anyOtherFocused = macbookFocused || heartFocused || iphoneFocused;
   const drag = useDragThrow(rigidBodyRef, { enabled: !mugFocused && !anyOtherFocused, spawn: [2.5, 4.0, 0.7] });
+  const { group: squashRef, onCollisionEnter: onLand } = useLandingSquash(rigidBodyRef);
 
   const cloned = useMemo(() => {
     const labelTex = buildMugLabelTexture();
-    const c = scene.clone();
+    const c = withShadows(scene.clone());
     c.traverse((child) => {
       if (!(child instanceof THREE.Mesh)) return;
       const mat = child.material as THREE.MeshStandardMaterial;
@@ -701,22 +733,24 @@ function MugModel() {
         camOff={[0, 0.5, 0.6]}
         lookOff={[0, 0.2, 0]}
       />
-      <RigidBody ref={rigidBodyRef} position={[2.5, 4.0, 0.7]} restitution={0.2} friction={1.0} linearDamping={0.5} angularDamping={0.5} colliders="cuboid">
-        <group ref={groupRef}>
-          <primitive
-            object={cloned}
-            scale={MUG_SCALE}
-            onPointerEnter={() => { hoverRef.current = true; }}
-            onPointerLeave={() => { hoverRef.current = false; }}
-            onPointerDown={(e: ThreeEvent<PointerEvent>) => {
-              start.current = { x: e.clientX, y: e.clientY };
-              drag.onPointerDown(e);
-            }}
-            onPointerUp={(e: { clientX: number; clientY: number }) => {
-              const d = Math.hypot(e.clientX - start.current.x, e.clientY - start.current.y);
-              if (d < 5 && !mugFocused && !anyOtherFocused) setMugFocused(true);
-            }}
-          />
+      <RigidBody ref={rigidBodyRef} position={[2.5, 4.0, 0.7]} restitution={0.2} friction={1.0} linearDamping={0.5} angularDamping={0.5} colliders="cuboid" onCollisionEnter={onLand}>
+        <group ref={squashRef}>
+          <group ref={groupRef}>
+            <primitive
+              object={cloned}
+              scale={MUG_SCALE}
+              onPointerEnter={() => { hoverRef.current = true; }}
+              onPointerLeave={() => { hoverRef.current = false; }}
+              onPointerDown={(e: ThreeEvent<PointerEvent>) => {
+                start.current = { x: e.clientX, y: e.clientY };
+                drag.onPointerDown(e);
+              }}
+              onPointerUp={(e: { clientX: number; clientY: number }) => {
+                const d = Math.hypot(e.clientX - start.current.x, e.clientY - start.current.y);
+                if (d < 5 && !mugFocused && !anyOtherFocused) setMugFocused(true);
+              }}
+            />
+          </group>
         </group>
       </RigidBody>
     </>

@@ -36,3 +36,20 @@ Notes / gotchas found on the way:
 - Thrown objects could leave the view: added invisible walls + respawn if they fall below y=-8.
 - Project data moved to `lib/projects.ts` (shared by overlay grid and 3D slideshow).
 - Project detail has an optional `repo` field; no repo links are filled in yet.
+
+# LIFE_AND_DETAIL batch (2026-11-19)
+
+- [x] Landing squash: shared hook, impact speed from previous frame, squash wrapper group per object
+- [x] Heart squeeze on click (single beat), hover beat unchanged
+- [x] Phone screen dim until hovered / grabbed / focused
+- [x] Konami code → low gravity 10 s + small indicator
+- [x] Real shadows: key light shadow map, objects cast/receive, shadow-catcher floor; drop ContactShadows
+- [x] Time of day: pure `sampleTimeOfDay(hour)` in lib (unit tested), drives lights + background; `?hour=` override for preview
+- [x] Desk lamp: procedural, dynamic body, click toggles warm spotlight; on by default at night
+- [x] Verify: lint, tsc, tests, build, browser
+
+## Review (LIFE_AND_DETAIL)
+
+All 7 shipped; lint, tsc, 92 tests, build pass; checked in Chrome at ?hour=13 and ?hour=22.
+- Lamp "missing" bug: it rendered fine but dark metal with no env map read as black on the dark background, and what showed under the table was its shadow. Now 1.6x scale, cream matte.
+- ContactShadows removed (replaced by key-light shadow map + shadowMaterial floor), so the composer autoClear workaround is gone too.

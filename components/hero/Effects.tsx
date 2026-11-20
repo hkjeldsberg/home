@@ -60,13 +60,6 @@ export default function Effects() {
   const caRef = useRef<ChromaticAberrationEffect>(null);
   const fx = useRef<FxState>({ prevFocus: null, spike: 0 });
 
-  // EffectComposer sets gl.autoClear = false renderer-wide. drei's ContactShadows renders into its
-  // own target via gl.render and relies on auto-clear, so without this its shadow map accumulates
-  // into a visible plane. Priority -1 runs before ContactShadows (0) and the composer (1).
-  useFrame(({ gl }) => {
-    gl.autoClear = true;
-  }, -1);
-
   useFrame(() => {
     if (dofRef.current && caRef.current) updateEffects(dofRef.current, caRef.current, fx.current, focused);
   });
